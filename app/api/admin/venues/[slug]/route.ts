@@ -31,7 +31,7 @@ export async function GET(_req: Request, params: RouteParams) {
 
   const { data: v, error } = await c.admin
     .from('venues')
-    .select('id, slug, name, tagline, category, lat, lng, radius_meters, is_active, is_premium, created_at, owner_id, scan_secret')
+    .select('id, slug, name, tagline, category, lat, lng, radius_meters, is_active, is_premium, created_at, owner_id, scan_secret, image_url')
     .eq('slug', c.slug)
     .maybeSingle()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -63,11 +63,47 @@ export async function GET(_req: Request, params: RouteParams) {
       createdAt:    v.created_at,
       ownerId:      v.owner_id,
       scanSecret:   v.scan_secret,
+      imageUrl:     v.image_url ?? null,
     },
     liveCount: count ?? 0,
     isOwner:   v.owner_id === c.me,
     role:      c.role,
   })
+}
+
+export async function PATCH(req: Request, params: RouteParams) {
+  const c = await ctx(params)
+  if ('unauth' in c)    return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+  if ('forbidden' in c) return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+
+  const { data: v } = await c.admin.from('venues').select('owner_id').eq('slug', c.slug).maybeSingle()
+  if (!v) return NextResponse.json({ error: 'venue not found' }, { status: 404 })
+  if (c.role !== 'super_admin' && v.owner_id !== c.me) {
+    return NextResponse.json({ error: 'Not your venue' }, { status: 403 })
+  }
+
+  const body = await req.json().catch(() => ({}))
+  if (!body.imageDataUrl) return NextResponse.json({ error: 'imageDataUrl required' }, { status: 400 })
+
+  const match = (body.imageDataUrl as string).match(/^data:(image\/\w+);base64,(.+)$/)
+  if (!match) return NextResponse.json({ error: 'Invalid image data' }, { status: 400 })
+
+  const mimeType = match[1]
+  const ext = mimeType.split('/')[1] ?? 'jpg'
+  const buf = Buffer.from(match[2], 'base64')
+  const path = `${c.slug}/cover.${ext}`
+
+  const { error: upErr } = await c.admin.storage
+    .from('venue-images')
+    .upload(path, buf, { contentType: mimeType, upsert: true })
+  if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 })
+
+  const { data: urlData } = c.admin.storage.from('venue-images').getPublicUrl(path)
+  const imageUrl = urlData.publicUrl
+
+  await c.admin.from('venues').update({ image_url: imageUrl }).eq('slug', c.slug)
+
+  return NextResponse.json({ ok: true, imageUrl })
 }
 
 export async function DELETE(_req: Request, params: RouteParams) {

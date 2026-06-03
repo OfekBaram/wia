@@ -18,6 +18,7 @@ export interface DbVenue {
   owner_id:       string | null
   scan_secret:    string
   created_at:     string
+  image_url:      string | null
 }
 
 export interface DbMasterProfile {

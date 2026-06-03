@@ -13,13 +13,14 @@ import type { VenueCategory } from '@/lib/types'
 export const dynamic = 'force-dynamic'
 
 interface Body {
-  slug:         string
-  name:         string
-  tagline?:     string
-  category:     VenueCategory
-  lat:          number
-  lng:          number
-  radiusMeters: number
+  slug:           string
+  name:           string
+  tagline?:       string
+  category:       VenueCategory
+  lat:            number
+  lng:            number
+  radiusMeters:   number
+  imageDataUrl?:  string
 }
 
 export async function POST(req: Request) {
@@ -85,6 +86,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `A venue with slug "${body.slug}" already exists.` }, { status: 409 })
   }
 
+  // Upload venue image if provided
+  let imageUrl: string | null = null
+  if (body.imageDataUrl) {
+    const match = body.imageDataUrl.match(/^data:(image\/\w+);base64,(.+)$/)
+    if (match) {
+      const mimeType = match[1]
+      const ext = mimeType.split('/')[1] ?? 'jpg'
+      const buf = Buffer.from(match[2], 'base64')
+      const path = `${body.slug}/cover.${ext}`
+      const { error: upErr } = await admin.storage
+        .from('venue-images')
+        .upload(path, buf, { contentType: mimeType, upsert: true })
+      if (!upErr) {
+        const { data: urlData } = admin.storage.from('venue-images').getPublicUrl(path)
+        imageUrl = urlData.publicUrl
+      }
+    }
+  }
+
   // Create
   const { data, error } = await admin
     .from('venues')
@@ -97,6 +117,7 @@ export async function POST(req: Request) {
       lng:           body.lng,
       radius_meters: body.radiusMeters,
       owner_id:      userId,
+      image_url:     imageUrl,
     })
     .select('id, slug')
     .single()

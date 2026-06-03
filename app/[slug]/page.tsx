@@ -70,7 +70,7 @@ export default function RoomPage({ params }: Props) {
       if (!res.ok) { setReady(true); return }
       const json = await res.json()
       setData({
-        venue:         json.venue,
+        venue:         { ...json.venue, coverImageUrl: json.venue.imageUrl ?? undefined },
         liveCount:     json.liveCount,
         userId:        json.userId,
         isMember:      json.isMember,

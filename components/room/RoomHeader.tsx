@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { Ghost, Settings, MapPin, LogOut, QrCode } from 'lucide-react'
 import type { Location } from '@/lib/types'
 import { LiveBadge } from '@/components/ui/LiveBadge'
@@ -24,14 +25,39 @@ export function RoomHeader({ location, isMember, onLeave }: RoomHeaderProps) {
 
   return (
     <header className="sticky top-0 z-40 glass-strong border-b border-wia-ink/10">
+      {location.coverImageUrl && (
+        <div className="relative h-28 sm:h-36 w-full overflow-hidden">
+          <Image
+            src={location.coverImageUrl}
+            alt={location.name}
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/50" />
+          <div className="absolute bottom-3 left-4 sm:left-6">
+            <h1 className="font-display font-bold text-white text-lg sm:text-2xl leading-tight drop-shadow">
+              {location.name}
+            </h1>
+            {location.tagline && (
+              <p className="text-white/80 text-xs sm:text-sm mt-0.5 drop-shadow">{location.tagline}</p>
+            )}
+          </div>
+          <div className="absolute bottom-3 right-4 sm:right-6">
+            <LiveBadge count={location.liveCount} />
+          </div>
+        </div>
+      )}
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-3 sm:py-4">
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <span className="text-xl sm:text-2xl shrink-0">{emoji}</span>
+            {!location.coverImageUrl && <span className="text-xl sm:text-2xl shrink-0">{emoji}</span>}
             <div className="min-w-0 flex-1">
-              <h1 className="font-display font-bold text-wia-ink text-base sm:text-lg leading-tight truncate">
-                {location.name}
-              </h1>
+              {!location.coverImageUrl && (
+                <h1 className="font-display font-bold text-wia-ink text-base sm:text-lg leading-tight truncate">
+                  {location.name}
+                </h1>
+              )}
               <div className="flex items-center gap-1 text-[10px] sm:text-xs text-wia-ink/60 truncate">
                 <MapPin size={10} className="shrink-0" />
                 <span className="font-mono truncate">wia.com/{location.slug}</span>
@@ -40,7 +66,7 @@ export function RoomHeader({ location, isMember, onLeave }: RoomHeaderProps) {
           </div>
 
           <div className="hidden sm:flex items-center gap-2">
-            <LiveBadge count={location.liveCount} />
+            {!location.coverImageUrl && <LiveBadge count={location.liveCount} />}
             <button className="p-2 rounded-xl glass hover:bg-white/10 transition-colors text-wia-ink/60 hover:text-wia-ink" title="Ghost mode">
               <Ghost size={18} />
             </button>
@@ -69,7 +95,7 @@ export function RoomHeader({ location, isMember, onLeave }: RoomHeaderProps) {
         </div>
 
         <div className="flex sm:hidden items-center justify-between gap-2 mt-3">
-          <LiveBadge count={location.liveCount} size="sm" />
+          {!location.coverImageUrl && <LiveBadge count={location.liveCount} size="sm" />}
           <div className="flex items-center gap-1">
             <button className="p-1.5 rounded-lg glass text-wia-ink/60 hover:text-wia-ink" title="Ghost mode">
               <Ghost size={16} />

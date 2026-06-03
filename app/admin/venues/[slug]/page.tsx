@@ -3,7 +3,8 @@
 import { use, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ArrowLeft, ExternalLink, Trash2, MapPin, Sparkles } from 'lucide-react'
+import { ArrowLeft, ExternalLink, Trash2, MapPin, Sparkles, ImagePlus, X } from 'lucide-react'
+import Image from 'next/image'
 import { venueRoomUrl, venueScanUrl } from '@/lib/api/venues'
 import { VENUE_EMOJI } from '@/lib/mock-data'
 import type { Location } from '@/lib/types'
@@ -21,10 +22,12 @@ export default function AdminVenuePage({ params }: Props) {
   const justCreated = searchParams.get('created') === '1'
   const { user } = useAuth()
 
-  const [venue,     setVenue]     = useState<(Location & { scanSecret: string; ownerId: string | null }) | null>(null)
-  const [liveCount, setLiveCount] = useState(0)
-  const [loaded,    setLoaded]    = useState(false)
-  const [forbidden, setForbidden] = useState(false)
+  const [venue,        setVenue]        = useState<(Location & { scanSecret: string; ownerId: string | null; imageUrl: string | null }) | null>(null)
+  const [liveCount,    setLiveCount]    = useState(0)
+  const [loaded,       setLoaded]       = useState(false)
+  const [forbidden,    setForbidden]    = useState(false)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [uploadingImg, setUploadingImg] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -46,8 +49,7 @@ export default function AdminVenuePage({ params }: Props) {
         }
         const json = await res.json()
         if (cancelled) return
-        // Coerce createdAt to Date for compatibility with the Location type
-        setVenue({ ...json.venue, createdAt: new Date(json.venue.createdAt) })
+        setVenue({ ...json.venue, createdAt: new Date(json.venue.createdAt), imageUrl: json.venue.imageUrl ?? null })
         setLiveCount(json.liveCount ?? 0)
       } finally {
         if (!cancelled) setLoaded(true)
@@ -94,6 +96,28 @@ export default function AdminVenuePage({ params }: Props) {
       credentials: 'include',
     })
     router.push('/admin')
+  }
+
+  async function handleImageUpload(file: File) {
+    setUploadingImg(true)
+    const reader = new FileReader()
+    reader.onload = async (ev) => {
+      const dataUrl = ev.target?.result as string
+      setImagePreview(dataUrl)
+      try {
+        const res = await fetch(`/api/admin/venues/${encodeURIComponent(venue!.slug)}`, {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageDataUrl: dataUrl }),
+        })
+        const json = await res.json()
+        if (json.ok) setVenue(v => v ? { ...v, imageUrl: json.imageUrl } : v)
+      } finally {
+        setUploadingImg(false)
+      }
+    }
+    reader.readAsDataURL(file)
   }
 
   const emoji   = VENUE_EMOJI[venue.category]
@@ -157,6 +181,39 @@ export default function AdminVenuePage({ params }: Props) {
 
       <div className="grid lg:grid-cols-5 gap-6">
         <div className="lg:col-span-3 space-y-4">
+          <GlassCard className="p-5 space-y-3">
+            <h2 className="font-display font-semibold text-wia-ink">Cover image</h2>
+            {(imagePreview ?? venue.imageUrl) ? (
+              <div className="relative rounded-xl overflow-hidden h-44">
+                <Image src={imagePreview ?? venue.imageUrl!} alt="Cover" fill className="object-cover" />
+                <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
+                  <span className="text-white text-sm font-medium flex items-center gap-1.5">
+                    <ImagePlus size={16} /> Change photo
+                  </span>
+                  <input type="file" accept="image/*" className="sr-only" onChange={e => { const f = e.target.files?.[0]; if (f) handleImageUpload(f) }} />
+                </label>
+                {uploadingImg && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                    <div className="w-6 h-6 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                  </div>
+                )}
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center gap-2 h-32 rounded-xl border-2 border-dashed border-wia-ink/20 hover:border-wia-purple/40 cursor-pointer transition-colors">
+                {uploadingImg ? (
+                  <div className="w-6 h-6 rounded-full border-2 border-wia-purple/30 border-t-wia-purple animate-spin" />
+                ) : (
+                  <>
+                    <ImagePlus size={20} className="text-wia-ink/40" />
+                    <span className="text-sm text-wia-ink/50">Click to upload a cover photo</span>
+                  </>
+                )}
+                <input type="file" accept="image/*" className="sr-only" onChange={e => { const f = e.target.files?.[0]; if (f) handleImageUpload(f) }} />
+              </label>
+            )}
+            <p className="text-[11px] text-wia-ink/50">Shown as a banner in the room when guests scan in.</p>
+          </GlassCard>
+
           <GlassCard className="p-5 space-y-4">
             <h2 className="font-display font-semibold text-wia-ink">Venue link</h2>
             <div>

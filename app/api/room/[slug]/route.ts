@@ -16,7 +16,7 @@ export async function GET(_req: Request, { params }: RouteParams) {
 
   const { data: venue, error: vErr } = await admin
     .from('venues')
-    .select('id, slug, name, tagline, category, lat, lng, radius_meters, is_active, is_premium, created_at')
+    .select('id, slug, name, tagline, category, lat, lng, radius_meters, is_active, is_premium, created_at, image_url')
     .eq('slug', slug)
     .maybeSingle()
   if (vErr) return NextResponse.json({ error: vErr.message }, { status: 500 })
@@ -91,6 +91,7 @@ export async function GET(_req: Request, { params }: RouteParams) {
       isActive:      venue.is_active,
       isPremium:     venue.is_premium,
       createdAt:     venue.created_at,
+      imageUrl:      venue.image_url ?? null,
     },
     liveCount:    count ?? 0,
     userId,

@@ -3,7 +3,8 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, AlertCircle, MapPin, Check } from 'lucide-react'
+import { ArrowLeft, AlertCircle, MapPin, Check, ImagePlus, X } from 'lucide-react'
+import Image from 'next/image'
 import { slugify, getBaseUrl } from '@/lib/api/venues'
 import { VENUE_EMOJI } from '@/lib/mock-data'
 import type { VenueCategory } from '@/lib/types'
@@ -29,6 +30,7 @@ export default function NewVenuePage() {
   const [lat,         setLat]         = useState('')
   const [lng,         setLng]         = useState('')
   const [radius,      setRadius]      = useState(50)
+  const [imageDataUrl, setImageDataUrl] = useState<string | null>(null)
   const [error,       setError]       = useState<string | null>(null)
   const [saving,      setSaving]      = useState(false)
 
@@ -68,6 +70,7 @@ export default function NewVenuePage() {
           lng:          lngNum,
           radiusMeters: radius,
           tagline:      tagline.trim() || undefined,
+          imageDataUrl: imageDataUrl ?? undefined,
         }),
       })
       if (!res.ok) {
@@ -151,6 +154,39 @@ export default function NewVenuePage() {
               placeholder="A short hook for your venue" maxLength={80}
               className="w-full glass rounded-xl px-4 py-3 text-wia-ink placeholder:text-wia-ink/50 outline-none focus:ring-1 focus:ring-wia-purple/50 transition-all"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-wia-ink/60 mb-2">
+              Cover image <span className="text-wia-ink/55">(optional)</span>
+            </label>
+            {imageDataUrl ? (
+              <div className="relative rounded-xl overflow-hidden h-40">
+                <Image src={imageDataUrl} alt="Cover preview" fill className="object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setImageDataUrl(null)}
+                  className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/50 text-white hover:bg-black/70 transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center gap-2 h-32 rounded-xl border-2 border-dashed border-wia-ink/20 hover:border-wia-purple/40 cursor-pointer transition-colors">
+                <ImagePlus size={20} className="text-wia-ink/40" />
+                <span className="text-sm text-wia-ink/50">Click to upload a photo</span>
+                <input
+                  type="file" accept="image/*" className="sr-only"
+                  onChange={e => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    const reader = new FileReader()
+                    reader.onload = ev => setImageDataUrl(ev.target?.result as string)
+                    reader.readAsDataURL(file)
+                  }}
+                />
+              </label>
+            )}
           </div>
         </GlassCard>
 
