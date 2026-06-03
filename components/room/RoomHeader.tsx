@@ -74,7 +74,7 @@ export function RoomHeader({ location, isMember, onLeave }: RoomHeaderProps) {
           {isMember ? (
             <button
               onClick={leave}
-              className="shrink-0 flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl glass border border-wia-ink/15 text-white text-sm font-medium hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-300 transition-all"
+              className="shrink-0 flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl glass border border-wia-ink/15 text-wia-ink/60 text-sm font-medium hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 transition-all"
             >
               <LogOut size={14} />
               <span className="hidden sm:inline">Leave</span>
