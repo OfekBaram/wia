@@ -7,24 +7,30 @@ import { useAuth } from '@/lib/hooks/useAuth'
 import { signOut, isSuperAdmin } from '@/lib/auth'
 
 const BASE_LINKS = [
-  { href: '/admin',            label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/admin/venues/new', label: 'New venue', icon: Plus },
+  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
 ]
 
 export function AdminNav() {
   const pathname = usePathname()
   const { user } = useAuth()
+  const superAdmin = isSuperAdmin(user)
+
+  const links = [
+    ...BASE_LINKS,
+    ...(superAdmin ? [{ href: '/admin/venues/new', label: 'New venue',  icon: Plus      }] : []),
+    ...(superAdmin ? [{ href: '/admin/analytics',  label: 'Analytics',  icon: BarChart2 }] : []),
+  ]
 
   return (
     <header className="sticky top-0 z-40 border-b border-wia-ink/10 glass-strong">
       <div className="mx-auto max-w-7xl px-6 py-3 flex items-center gap-4">
         <Link href="/admin" className="flex items-center gap-2 group shrink-0">
           <span className="text-lg font-display font-bold tracking-tight gradient-text">WIA</span>
-          <span className="text-wia-ink/55 text-xs uppercase tracking-wider hidden sm:inline">admin</span>
+          <span className="text-wia-ink/55 text-xs uppercase tracking-wider hidden sm:inline">{superAdmin ? 'admin' : 'venue'}</span>
         </Link>
 
         <nav className="flex items-center gap-1 ml-2">
-          {[...BASE_LINKS, ...(isSuperAdmin(user) ? [{ href: '/admin/analytics', label: 'Analytics', icon: BarChart2 }] : [])].map(link => {
+          {links.map(link => {
             const isActive = pathname === link.href
             return (
               <Link
@@ -54,7 +60,7 @@ export function AdminNav() {
             <div className="flex items-center gap-2 pl-3 border-l border-wia-ink/10">
               <div className="text-right hidden sm:block">
                 <div className="text-xs font-medium text-wia-ink truncate max-w-[160px]">{user.email}</div>
-                <div className="text-[10px] uppercase tracking-wider text-wia-purple">Admin</div>
+                <div className="text-[10px] uppercase tracking-wider text-wia-purple">{superAdmin ? 'Admin' : 'Venue owner'}</div>
               </div>
               <button
                 onClick={signOut}
