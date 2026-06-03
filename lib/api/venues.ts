@@ -4,17 +4,18 @@ import type { Location, VenueCategory } from '@/lib/types'
 
 function rowToVenue(r: DbVenue): Location {
   return {
-    id:           r.id,
-    slug:         r.slug,
-    name:         r.name,
-    tagline:      r.tagline ?? '',
-    category:     r.category,
-    coordinates:  { lat: r.lat, lng: r.lng },
-    radiusMeters: r.radius_meters,
-    isActive:     r.is_active,
-    isPremium:    r.is_premium,
-    liveCount:    0, // computed separately
-    createdAt:    new Date(r.created_at),
+    id:             r.id,
+    slug:           r.slug,
+    name:           r.name,
+    tagline:        r.tagline ?? '',
+    category:       r.category,
+    coordinates:    { lat: r.lat, lng: r.lng },
+    radiusMeters:   r.radius_meters,
+    isActive:       r.is_active,
+    isPremium:      r.is_premium,
+    liveCount:      0,
+    createdAt:      new Date(r.created_at),
+    coverImageUrl:  r.image_url ?? undefined,
   }
 }
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { ArrowRight, Users, Heart, Eye, Clock, MapPin, AlertCircle, Loader } from 'lucide-react'
 import type { Location } from '@/lib/types'
 import { VENUE_EMOJI } from '@/lib/mock-data'
@@ -80,7 +81,14 @@ export function StepWelcome({ location, liveCount, onContinue, isReturning }: St
           <span className="text-xs text-emerald-300">QR verified · you&apos;re at the venue</span>
         </div>
 
-        <div className="inline-block text-5xl mb-1">{emoji}</div>
+        {location.coverImageUrl ? (
+          <div className="relative w-full h-36 rounded-2xl overflow-hidden -mx-0 mb-1">
+            <Image src={location.coverImageUrl} alt={location.name} fill className="object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/50" />
+          </div>
+        ) : (
+          <div className="inline-block text-5xl mb-1">{emoji}</div>
+        )}
 
         <h1 className="font-display text-3xl sm:text-4xl font-bold text-wia-ink leading-tight">
           {isReturning ? 'Welcome back to ' : 'Welcome to '}
