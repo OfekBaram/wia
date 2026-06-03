@@ -12,9 +12,13 @@ export async function POST(req: Request) {
   if (!venueId) return NextResponse.json({ error: 'venueId required' }, { status: 400 })
 
   const admin = adminClient()
-  await admin.from('presence').delete()
+
+  // Soft-delete: record left_at so session length is preserved for analytics
+  await admin.from('presence')
+    .update({ left_at: new Date().toISOString(), is_visible: false, expires_at: new Date().toISOString() })
     .eq('user_id', userData.user.id)
     .eq('venue_id', venueId)
+    .is('left_at', null)
 
   return NextResponse.json({ ok: true })
 }

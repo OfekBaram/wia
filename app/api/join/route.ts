@@ -152,10 +152,15 @@ export async function POST(req: Request) {
       status_text: body.statusText,
       selfie_url:  selfieUrl,
       expires_at:  expiresAt,
+      left_at:     null,
+      is_visible:  true,
     }, { onConflict: 'user_id,venue_id' })
     if (presErr) {
       return NextResponse.json({ error: `presence failed: ${presErr.message}` }, { status: 500 })
     }
+
+    // Increment scan counter
+    await admin.rpc('increment_scan_count', { venue_id_arg: venue.id })
 
     return NextResponse.json({ ok: true, slug: body.venueSlug, userId })
   } catch (e) {

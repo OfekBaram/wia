@@ -16,7 +16,7 @@ export async function GET(_req: Request, { params }: RouteParams) {
 
   const { data: venue, error: vErr } = await admin
     .from('venues')
-    .select('id, slug, name, tagline, category, lat, lng, radius_meters, is_active, is_premium, created_at, image_url')
+    .select('id, slug, name, tagline, category, lat, lng, radius_meters, is_active, is_premium, created_at, image_url, peak_count')
     .eq('slug', slug)
     .maybeSingle()
   if (vErr) return NextResponse.json({ error: vErr.message }, { status: 500 })
@@ -29,6 +29,11 @@ export async function GET(_req: Request, { params }: RouteParams) {
     .eq('venue_id', venue.id)
     .eq('is_visible', true)
     .gt('expires_at', new Date().toISOString())
+
+  // Update peak_count if current exceeds stored peak
+  if ((count ?? 0) > (venue.peak_count ?? 0)) {
+    await admin.from('venues').update({ peak_count: count }).eq('id', venue.id)
+  }
 
   // Who is the caller?
   let userId: string | null = null

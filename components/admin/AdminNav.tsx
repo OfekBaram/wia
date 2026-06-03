@@ -2,11 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, MapPin, Plus, LogOut } from 'lucide-react'
+import { LayoutDashboard, Plus, LogOut, BarChart2 } from 'lucide-react'
 import { useAuth } from '@/lib/hooks/useAuth'
-import { signOut } from '@/lib/auth'
+import { signOut, isSuperAdmin } from '@/lib/auth'
 
-const LINKS = [
+const BASE_LINKS = [
   { href: '/admin',            label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/venues/new', label: 'New venue', icon: Plus },
 ]
@@ -24,7 +24,7 @@ export function AdminNav() {
         </Link>
 
         <nav className="flex items-center gap-1 ml-2">
-          {LINKS.map(link => {
+          {[...BASE_LINKS, ...(isSuperAdmin(user) ? [{ href: '/admin/analytics', label: 'Analytics', icon: BarChart2 }] : [])].map(link => {
             const isActive = pathname === link.href
             return (
               <Link

@@ -1,6 +1,7 @@
 'use client'
 
 import { use, useEffect, useState } from 'react'
+import { AnalyticsTab } from '@/components/admin/AnalyticsTab'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, ExternalLink, Trash2, MapPin, Sparkles, ImagePlus, X } from 'lucide-react'
@@ -20,6 +21,7 @@ export default function AdminVenuePage({ params }: Props) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const justCreated = searchParams.get('created') === '1'
+  const tabParam    = searchParams.get('tab')
   const { user } = useAuth()
 
   const [venue,        setVenue]        = useState<(Location & { scanSecret: string; ownerId: string | null; imageUrl: string | null }) | null>(null)
@@ -28,6 +30,7 @@ export default function AdminVenuePage({ params }: Props) {
   const [forbidden,    setForbidden]    = useState(false)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [uploadingImg, setUploadingImg] = useState(false)
+  const [tab,          setTab]          = useState<'overview' | 'analytics'>(tabParam === 'analytics' ? 'analytics' : 'overview')
 
   useEffect(() => {
     let cancelled = false
@@ -179,7 +182,26 @@ export default function AdminVenuePage({ params }: Props) {
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-5 gap-6">
+      {/* Tab bar */}
+      <div className="flex gap-1 glass rounded-xl p-1 w-fit">
+        {(['overview', 'analytics'] as const).map(t => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all capitalize ${
+              tab === t
+                ? 'bg-white shadow text-wia-ink'
+                : 'text-wia-ink/50 hover:text-wia-ink'
+            }`}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'analytics' && <AnalyticsTab venueSlug={slug} />}
+
+      {tab === 'overview' && <div className="grid lg:grid-cols-5 gap-6">
         <div className="lg:col-span-3 space-y-4">
           <GlassCard className="p-5 space-y-3">
             <h2 className="font-display font-semibold text-wia-ink">Cover image</h2>
@@ -283,7 +305,7 @@ export default function AdminVenuePage({ params }: Props) {
             <QRCodePoster venueName={venue.name} url={scanUrl} />
           </GlassCard>
         </div>
-      </div>
+      </div>}
     </div>
   )
 }
