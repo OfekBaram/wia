@@ -18,9 +18,11 @@ export function RoomHeader({ location, isMember, onLeave }: RoomHeaderProps) {
   const emoji = VENUE_EMOJI[location.category]
 
   async function leave() {
+    if (!confirm(`Leave ${location.name}? You'll need to scan again to rejoin.`)) return
     await leaveVenue(location.id).catch(() => {})
     onLeave?.()
     window.dispatchEvent(new CustomEvent('wia:left'))
+    window.location.assign(`/${location.slug}/join`)
   }
 
   return (
