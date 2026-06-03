@@ -47,19 +47,56 @@ export function PresenceGrid({
   const [chatWith,    setChatWith]    = useState<PresenceProfile | null>(null)
   const [showList,    setShowList]    = useState(false)
   const [hasChatted,  setHasChatted]  = useState(false)
-  const [busy,    setBusy]    = useState<Set<string>>(new Set())
+  const [busy,        setBusy]        = useState<Set<string>>(new Set())
+  const [unreadCount, setUnreadCount] = useState(0)
 
   // Once the user opens any chat in this venue, the floating launcher sticks
   // around for the rest of the session. The flag is per-venue so different
   // rooms don't share state.
-  const chatFlagKey = `wia:hasChatted:${venueSlug}`
+  const chatFlagKey    = `wia:hasChatted:${venueSlug}`
+  const lastReadPrefix = `wia:lastRead:${venueSlug}:`
+
   useEffect(() => {
     try { setHasChatted(sessionStorage.getItem(chatFlagKey) === '1') } catch { /* ignore */ }
   }, [chatFlagKey])
 
+  // Poll for unread messages every 3s when launcher is visible and no chat is open
+  useEffect(() => {
+    if (!currentUserId || chatWith) return
+
+    async function checkUnread() {
+      try {
+        const res = await fetch(`/api/chat/${encodeURIComponent(venueSlug)}/unread`, {
+          credentials: 'include', cache: 'no-store',
+        })
+        if (!res.ok) return
+        const { latest } = await res.json() as {
+          latest: Record<string, { fromUserId: string; createdAt: string }>
+        }
+        let count = 0
+        for (const [partnerId, msg] of Object.entries(latest)) {
+          if (msg.fromUserId === currentUserId) continue // sent by me
+          try {
+            const lastRead = sessionStorage.getItem(lastReadPrefix + partnerId)
+            if (!lastRead || new Date(msg.createdAt) > new Date(lastRead)) count++
+          } catch { count++ }
+        }
+        setUnreadCount(count)
+      } catch { /* ignore */ }
+    }
+
+    checkUnread()
+    const id = setInterval(checkUnread, 3_000)
+    return () => clearInterval(id)
+  }, [currentUserId, venueSlug, chatWith, lastReadPrefix])
+
   function openChat(person: PresenceProfile) {
     setShowList(false)
     setChatWith(person)
+    // Mark this conversation as read
+    try { sessionStorage.setItem(lastReadPrefix + person.userId, new Date().toISOString()) } catch { /* ignore */ }
+    // Recompute unread (optimistically remove 1 if it was unread)
+    setUnreadCount(c => Math.max(0, c - 1))
     if (!hasChatted) {
       setHasChatted(true)
       try { sessionStorage.setItem(chatFlagKey, '1') } catch { /* ignore */ }
@@ -228,6 +265,7 @@ export function PresenceGrid({
       {hasChatted && !chatWith && !showList && (
         <ChatLauncher
           matchCount={matches.length}
+          unreadCount={unreadCount}
           onClick={() => setShowList(true)}
         />
       )}
@@ -248,7 +286,12 @@ export function PresenceGrid({
           venueId={venueId}
           other={chatWith}
           currentUserId={currentUserId}
-          onClose={() => setChatWith(null)}
+          onClose={() => {
+            if (chatWith) {
+              try { sessionStorage.setItem(lastReadPrefix + chatWith.userId, new Date().toISOString()) } catch { /* ignore */ }
+            }
+            setChatWith(null)
+          }}
         />
       )}
     </div>
