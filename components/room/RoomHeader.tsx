@@ -6,7 +6,6 @@ import { MapPin, LogOut, QrCode } from 'lucide-react'
 import type { Location } from '@/lib/types'
 import { LiveBadge } from '@/components/ui/LiveBadge'
 import { VENUE_EMOJI } from '@/lib/mock-data'
-import { leaveVenue } from '@/lib/api/presence'
 
 interface RoomHeaderProps {
   location: Location
@@ -19,10 +18,14 @@ export function RoomHeader({ location, isMember, onLeave }: RoomHeaderProps) {
 
   async function leave() {
     if (!confirm(`Leave ${location.name}? You'll need to scan again to rejoin.`)) return
-    await leaveVenue(location.id).catch(() => {})
+    await fetch('/api/leave', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ venueId: location.id }),
+    }).catch(() => {})
     onLeave?.()
-    window.dispatchEvent(new CustomEvent('wia:left'))
-    window.location.assign(`/${location.slug}/join`)
+    window.location.assign(`/${location.slug}`)
   }
 
   return (

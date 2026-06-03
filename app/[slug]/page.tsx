@@ -127,10 +127,14 @@ export default function RoomPage({ params }: Props) {
     radiusMeters: data?.venue.radiusMeters ?? 50,
     onExit:       async () => {
       if (!data?.venue) return
-      await leaveVenue(data.venue.id)
+      await fetch('/api/leave', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ venueId: data.venue.id }),
+      }).catch(() => {})
       setGeofenced(true)
       refresh()
-      window.dispatchEvent(new CustomEvent('wia:left'))
     },
   })
 
