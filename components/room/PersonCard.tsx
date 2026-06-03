@@ -30,18 +30,25 @@ export function PersonCard({
   person, isCurrentUser, iLiked, likedMe, likesRemaining = 5,
   onLike, onUnlike, onOpenChat,
 }: PersonCardProps) {
-  const [pending, setPending] = useState(false)
+  const [pending,        setPending]        = useState(false)
+  const [optimisticLike, setOptimisticLike] = useState<boolean | null>(null)
 
-  const isMatch  = iLiked && likedMe
+  const effectiveLiked = optimisticLike !== null ? optimisticLike : (iLiked ?? false)
+  const isMatch  = effectiveLiked && likedMe
   const timeHere = formatDistanceToNow(new Date(person.arrivedAt), { addSuffix: false })
 
   async function handleHeart() {
     if (isCurrentUser || pending) return
     setPending(true)
+    const wasLiked = effectiveLiked
+    setOptimisticLike(!wasLiked)
     try {
-      if (iLiked) await onUnlike?.()
-      else        await onLike?.()
+      if (wasLiked) await onUnlike?.()
+      else          await onLike?.()
+    } catch {
+      setOptimisticLike(wasLiked ?? false) // revert on error
     } finally {
+      setOptimisticLike(null) // let parent state take over
       setPending(false)
     }
   }
@@ -127,22 +134,22 @@ export function PersonCard({
             {/* Heart button */}
             <button
               onClick={handleHeart}
-              disabled={pending || (!iLiked && likesRemaining <= 0)}
+              disabled={pending || (!effectiveLiked && likesRemaining <= 0)}
               className={cn(
                 'w-9 h-9 rounded-full flex items-center justify-center transition-all',
-                iLiked
+                effectiveLiked
                   ? 'bg-gradient-to-br from-wia-pink to-wia-purple text-white shadow-lg shadow-pink-500/40 scale-110'
                   : likesRemaining <= 0
                     ? 'bg-black/40 text-wia-ink/55 cursor-not-allowed'
                     : 'bg-white/90 text-wia-pink hover:scale-110 shadow-lg',
               )}
               title={
-                iLiked ? 'Tap to unlike'
+                effectiveLiked ? 'Tap to unlike'
                 : likesRemaining <= 0 ? 'No likes left in this room'
                 : 'Send a like'
               }
             >
-              <Heart size={16} fill={iLiked ? 'currentColor' : 'none'} />
+              <Heart size={16} fill={effectiveLiked ? 'currentColor' : 'none'} />
             </button>
           </div>
         )}

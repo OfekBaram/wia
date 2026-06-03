@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { Filter, Heart } from 'lucide-react'
 import type { PresenceProfile } from '@/lib/types'
 import { PersonCard } from './PersonCard'
@@ -49,6 +49,8 @@ export function PresenceGrid({
   const [hasChatted,  setHasChatted]  = useState(false)
   const [busy,        setBusy]        = useState<Set<string>>(new Set())
   const [unreadCount, setUnreadCount] = useState(0)
+  const [toast,       setToast]       = useState<string | null>(null)
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Once the user opens any chat in this venue, the floating launcher sticks
   // around for the rest of the session. The flag is per-venue so different
@@ -111,8 +113,16 @@ export function PresenceGrid({
 
   const likesRemaining = LIKE_LIMIT_PER_ROOM - likesSent.size
 
+  function showToast(msg: string) {
+    setToast(msg)
+    if (toastTimer.current) clearTimeout(toastTimer.current)
+    toastTimer.current = setTimeout(() => setToast(null), 2500)
+  }
+
   async function handleLike(toUserId: string) {
     if (busy.has(toUserId)) return
+    const person = presence.find(p => p.userId === toUserId)
+    showToast(`❤️ Liked ${person?.name ?? 'them'}`)
     setBusy(prev => new Set(prev).add(toUserId))
     try {
       const res = await fetch('/api/likes', {
@@ -123,7 +133,7 @@ export function PresenceGrid({
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({} as { error?: string }))
-        alert(err.error ?? 'Could not send the like')
+        showToast(err.error ?? 'Could not send the like')
       }
       onLikesChanged()
     } finally {
@@ -133,6 +143,8 @@ export function PresenceGrid({
 
   async function handleUnlike(toUserId: string) {
     if (busy.has(toUserId)) return
+    const person = presence.find(p => p.userId === toUserId)
+    showToast(`💔 Unliked ${person?.name ?? 'them'}`)
     setBusy(prev => new Set(prev).add(toUserId))
     try {
       await fetch('/api/likes', {
@@ -278,6 +290,15 @@ export function PresenceGrid({
           onClose={() => setShowList(false)}
         />
       )}
+
+      {/* Like / unlike toast */}
+      <div
+        className={`fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl glass-strong border border-wia-ink/15 shadow-xl text-sm font-medium text-wia-ink transition-all duration-300 pointer-events-none ${
+          toast ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+        }`}
+      >
+        {toast}
+      </div>
 
       {/* Active 1:1 chat overlay */}
       {chatWith && currentUserId && (
