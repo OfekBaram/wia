@@ -29,6 +29,7 @@ export function ChatPanel({ venueSlug, other, currentUserId, onClose }: ChatPane
   const [text,     setText]     = useState('')
   const [sending,  setSending]  = useState(false)
   const [error,    setError]    = useState<string | null>(null)
+  const [ready,    setReady]    = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const url = `/api/chat/${encodeURIComponent(venueSlug)}/${encodeURIComponent(other.userId)}`
@@ -39,7 +40,9 @@ export function ChatPanel({ venueSlug, other, currentUserId, onClose }: ChatPane
       if (!res.ok) return
       const json = await res.json()
       setMessages(json.messages ?? [])
-    } catch { /* ignore */ }
+    } catch { /* ignore */ } finally {
+      setReady(true)
+    }
   }, [url])
 
   useEffect(() => { load() }, [load])
@@ -108,7 +111,12 @@ export function ChatPanel({ venueSlug, other, currentUserId, onClose }: ChatPane
         </div>
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
-          {messages.length === 0 && (
+          {!ready && (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-6 h-6 rounded-full border-2 border-wia-purple/30 border-t-wia-purple animate-spin" />
+            </div>
+          )}
+          {ready && messages.length === 0 && (
             <div className="text-center py-12 text-sm text-wia-ink/55">
               You matched! Say hi 👋
             </div>
