@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Ghost, Settings, MapPin, LogOut, QrCode } from 'lucide-react'
+import { MapPin, LogOut, QrCode } from 'lucide-react'
 import type { Location } from '@/lib/types'
 import { LiveBadge } from '@/components/ui/LiveBadge'
 import { VENUE_EMOJI } from '@/lib/mock-data'
@@ -67,12 +67,6 @@ export function RoomHeader({ location, isMember, onLeave }: RoomHeaderProps) {
 
           <div className="hidden sm:flex items-center gap-2">
             {!location.coverImageUrl && <LiveBadge count={location.liveCount} />}
-            <button className="p-2 rounded-xl glass hover:bg-white/10 transition-colors text-wia-ink/60 hover:text-wia-ink" title="Ghost mode">
-              <Ghost size={18} />
-            </button>
-            <button className="p-2 rounded-xl glass hover:bg-white/10 transition-colors text-wia-ink/60 hover:text-wia-ink" title="Settings">
-              <Settings size={18} />
-            </button>
           </div>
 
           {isMember ? (
@@ -94,17 +88,11 @@ export function RoomHeader({ location, isMember, onLeave }: RoomHeaderProps) {
           )}
         </div>
 
-        <div className="flex sm:hidden items-center justify-between gap-2 mt-3">
-          {!location.coverImageUrl && <LiveBadge count={location.liveCount} size="sm" />}
-          <div className="flex items-center gap-1">
-            <button className="p-1.5 rounded-lg glass text-wia-ink/60 hover:text-wia-ink" title="Ghost mode">
-              <Ghost size={16} />
-            </button>
-            <button className="p-1.5 rounded-lg glass text-wia-ink/60 hover:text-wia-ink" title="Settings">
-              <Settings size={16} />
-            </button>
+        {!location.coverImageUrl && (
+          <div className="flex sm:hidden items-center mt-3">
+            <LiveBadge count={location.liveCount} size="sm" />
           </div>
-        </div>
+        )}
       </div>
     </header>
   )
