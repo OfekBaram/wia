@@ -62,6 +62,18 @@ export function PresenceGrid({
     try { setHasChatted(sessionStorage.getItem(chatFlagKey) === '1') } catch { /* ignore */ }
   }, [chatFlagKey])
 
+  // Open chat from match overlay event
+  useEffect(() => {
+    function onOpenChat(e: Event) {
+      const userId = (e as CustomEvent<{ userId: string }>).detail.userId
+      const person = presence.find(p => p.userId === userId)
+      if (person) openChat(person)
+    }
+    window.addEventListener('wia:open-chat', onOpenChat)
+    return () => window.removeEventListener('wia:open-chat', onOpenChat)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [presence])
+
   // Poll for unread messages every 3s when launcher is visible and no chat is open
   useEffect(() => {
     if (!currentUserId || chatWith) return

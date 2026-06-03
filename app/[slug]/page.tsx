@@ -1,13 +1,13 @@
 'use client'
 
-import { use, useCallback, useEffect, useState } from 'react'
+import { use, useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { MapPin, ArrowRight } from 'lucide-react'
 import type { Location, PresenceProfile, Gender } from '@/lib/types'
-import { leaveVenue } from '@/lib/api/presence'
 import { RoomHeader } from '@/components/room/RoomHeader'
 import { RoomGate } from '@/components/room/RoomGate'
+import { MatchOverlay } from '@/components/room/MatchOverlay'
 import { useGeofence } from '@/lib/hooks/useGeofence'
 
 interface Props {
@@ -59,6 +59,9 @@ export default function RoomPage({ params }: Props) {
   const [forwarding, setForwarding] = useState(false)
   const [notFound,   setNotFound]   = useState(false)
   const [geofenced,  setGeofenced]  = useState(false)
+  const [matchQueue, setMatchQueue] = useState<PresenceProfile[]>([])
+  const prevMatchIds = useRef<Set<string>>(new Set())
+  const isFirstPoll  = useRef(true)
 
   const refresh = useCallback(async () => {
     try {
@@ -69,16 +72,36 @@ export default function RoomPage({ params }: Props) {
       if (res.status === 404) { setNotFound(true); setReady(true); return }
       if (!res.ok) { setReady(true); return }
       const json = await res.json()
+      const newPresence    = shapePresence(json.presence ?? [])
+      const newLikesSent   = new Set<string>(json.likesSent     ?? [])
+      const newLikesRecvd  = new Set<string>(json.likesReceived ?? [])
+
       setData({
         venue:         { ...json.venue, coverImageUrl: json.venue.imageUrl ?? undefined },
         liveCount:     json.liveCount,
         userId:        json.userId,
         isMember:      json.isMember,
         myPresenceId:  json.myPresenceId,
-        presence:      shapePresence(json.presence ?? []),
-        likesSent:     new Set(json.likesSent     ?? []),
-        likesReceived: new Set(json.likesReceived ?? []),
+        presence:      newPresence,
+        likesSent:     newLikesSent,
+        likesReceived: newLikesRecvd,
       })
+
+      // Detect new mutual matches since the last poll
+      if (!isFirstPoll.current && json.isMember) {
+        const newMatches = newPresence.filter(
+          p => newLikesSent.has(p.userId) && newLikesRecvd.has(p.userId) && !prevMatchIds.current.has(p.userId)
+        )
+        if (newMatches.length > 0) {
+          setMatchQueue(q => [...q, ...newMatches])
+        }
+      }
+      // Update the known match set for next poll
+      prevMatchIds.current = new Set(
+        newPresence.filter(p => newLikesSent.has(p.userId) && newLikesRecvd.has(p.userId)).map(p => p.userId)
+      )
+      isFirstPoll.current = false
+
       setReady(true)
     } catch (e) {
       console.error('room load failed', e)
@@ -187,6 +210,8 @@ export default function RoomPage({ params }: Props) {
 
   const { venue, liveCount, isMember, presence, userId, likesSent, likesReceived } = data
   const venueWithCount = { ...venue, liveCount }
+  const mySelfieUrl    = presence.find(p => p.userId === userId)?.selfieUrl ?? ''
+  const currentMatch   = matchQueue[0] ?? null
 
   return (
     <div className="min-h-screen bg-wia-bg">
@@ -220,6 +245,19 @@ export default function RoomPage({ params }: Props) {
           onLikesChanged={refresh}
         />
       </main>
+
+      {currentMatch && mySelfieUrl && (
+        <MatchOverlay
+          match={currentMatch}
+          myselfieUrl={mySelfieUrl}
+          onDismiss={() => setMatchQueue(q => q.slice(1))}
+          onChat={() => {
+            setMatchQueue(q => q.slice(1))
+            // Scroll to PersonCard — open chat via a custom event the PresenceGrid listens to
+            window.dispatchEvent(new CustomEvent('wia:open-chat', { detail: { userId: currentMatch.userId } }))
+          }}
+        />
+      )}
     </div>
   )
 }
