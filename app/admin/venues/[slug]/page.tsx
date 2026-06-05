@@ -58,9 +58,9 @@ export default function AdminVenuePage({ params }: Props) {
         if (!cancelled) setLoaded(true)
       }
     }
-    if (user) load()
+    load()
     return () => { cancelled = true }
-  }, [slug, user])
+  }, [slug])
 
   if (!loaded) {
     return (

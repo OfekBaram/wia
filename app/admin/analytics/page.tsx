@@ -27,12 +27,11 @@ export default function AnalyticsDashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!ready || !isSuperAdmin(user)) return
     fetch('/api/admin/analytics', { credentials: 'include', cache: 'no-store' })
       .then(r => r.json())
       .then(d => setVenues(d.venues ?? []))
       .finally(() => setLoading(false))
-  }, [ready, user])
+  }, [])
 
   if (!ready) return null
   if (!isSuperAdmin(user)) {

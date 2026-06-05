@@ -71,7 +71,6 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!ready || !user) return
     let cancelled = false
     async function load() {
       try {
@@ -88,7 +87,7 @@ export default function AdminDashboard() {
     }
     load()
     return () => { cancelled = true }
-  }, [ready, user])
+  }, [])
 
   const totalLive = venues.reduce((sum, v) => sum + v.liveCount, 0)
   const hasVenue  = venues.length > 0
