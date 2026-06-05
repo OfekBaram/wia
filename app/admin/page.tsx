@@ -128,7 +128,7 @@ export default function AdminDashboard() {
             color="text-wia-purple"
           />
           <StatTile label="People live now" value={totalLive} sub="across your venues" color="text-wia-green" />
-          <StatTile label="Status" value={loading ? '…' : 'OK'} sub="Supabase connected" color="text-wia-cyan" />
+          {isSuperAdmin && <StatTile label="Status" value={loading ? '…' : 'OK'} sub="Supabase connected" color="text-wia-cyan" />}
         </div>
       )}
 
