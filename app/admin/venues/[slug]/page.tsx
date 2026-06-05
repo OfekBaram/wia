@@ -301,21 +301,11 @@ export default function AdminVenuePage({ params }: Props) {
             </div>
           </GlassCard>
 
-          <GlassCard className="p-5 space-y-4">
+          <GlassCard className="p-5 space-y-3">
             <h2 className="font-display font-semibold text-wia-ink">Location & geofence</h2>
-            <div className="grid grid-cols-3 gap-3 text-sm">
-              <div>
-                <div className="text-[10px] uppercase tracking-wider text-wia-ink/55 mb-0.5">Lat</div>
-                <div className="font-mono text-wia-ink/80">{venue.coordinates.lat.toFixed(5)}</div>
-              </div>
-              <div>
-                <div className="text-[10px] uppercase tracking-wider text-wia-ink/55 mb-0.5">Lng</div>
-                <div className="font-mono text-wia-ink/80">{venue.coordinates.lng.toFixed(5)}</div>
-              </div>
-              <div>
-                <div className="text-[10px] uppercase tracking-wider text-wia-ink/55 mb-0.5">Radius</div>
-                <div className="font-mono text-wia-ink/80">{venue.radiusMeters}m</div>
-              </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-wia-ink/60">Geofence radius</span>
+              <span className="font-mono text-wia-ink font-medium">{venue.radiusMeters}m</span>
             </div>
             <a
               href={`https://www.openstreetmap.org/?mlat=${venue.coordinates.lat}&mlon=${venue.coordinates.lng}&zoom=18`}
@@ -323,7 +313,7 @@ export default function AdminVenuePage({ params }: Props) {
               className="inline-flex items-center gap-1.5 text-xs text-wia-purple/80 hover:text-wia-purple transition-colors"
             >
               <MapPin size={12} />
-              View on map
+              View venue on map
             </a>
           </GlassCard>
 

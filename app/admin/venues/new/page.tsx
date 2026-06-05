@@ -52,7 +52,7 @@ export default function NewVenuePage() {
     if (name.trim().length < 2) return setError('Venue name is required.')
     if (!finalSlug)              return setError('Slug is required.')
     const latNum = parseFloat(lat); const lngNum = parseFloat(lng)
-    if (isNaN(latNum) || isNaN(lngNum)) return setError('Enter valid coordinates (lat/lng).')
+    if (isNaN(latNum) || isNaN(lngNum)) return setError('Please use "Use my location" to set the venue location.')
     if (radius < 10 || radius > 1000)   return setError('Radius must be between 10 and 1000 meters.')
 
     setSaving(true)
@@ -205,22 +205,17 @@ export default function NewVenuePage() {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[11px] uppercase tracking-wider text-wia-ink/55 mb-1.5">Latitude</label>
-              <input
-                value={lat} onChange={e => setLat(e.target.value)} placeholder="32.085300" inputMode="decimal"
-                className="w-full glass rounded-xl px-4 py-3 text-wia-ink placeholder:text-wia-ink/50 outline-none focus:ring-1 focus:ring-wia-purple/50 font-mono text-sm transition-all"
-              />
+          {lat && lng ? (
+            <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 text-sm">
+              <MapPin size={14} className="shrink-0" />
+              Location captured
             </div>
-            <div>
-              <label className="block text-[11px] uppercase tracking-wider text-wia-ink/55 mb-1.5">Longitude</label>
-              <input
-                value={lng} onChange={e => setLng(e.target.value)} placeholder="34.781800" inputMode="decimal"
-                className="w-full glass rounded-xl px-4 py-3 text-wia-ink placeholder:text-wia-ink/50 outline-none focus:ring-1 focus:ring-wia-purple/50 font-mono text-sm transition-all"
-              />
+          ) : (
+            <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 text-sm">
+              <MapPin size={14} className="shrink-0" />
+              Click &quot;Use my location&quot; to set the venue location
             </div>
-          </div>
+          )}
 
           <div>
             <div className="flex items-center justify-between mb-2">
