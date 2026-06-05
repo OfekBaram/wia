@@ -46,39 +46,45 @@ export function useGeofence({
 
     let outsideCount = 0
     let firedExit    = false
+    let cancelled    = false
     const limit = radiusMeters + gracMeters
 
-    const watchId = navigator.geolocation.watchPosition(
-      (pos) => {
-        const d = haversineMeters(
-          { lat: pos.coords.latitude, lng: pos.coords.longitude },
-          venue,
-        )
-        setDistance(d)
-        if (d <= limit) {
-          outsideCount = 0
-          setStatus('inside')
-        } else {
-          outsideCount += 1
-          setStatus('outside')
-          if (outsideCount >= exitThreshold && !firedExit) {
-            firedExit = true
-            onExit?.()
+    // Use getCurrentPosition polling instead of watchPosition.
+    // iOS Safari treats watchPosition as a separate (more invasive) permission
+    // and will re-prompt even after the user already approved getCurrentPosition
+    // in the join flow. Polling every 30s reuses the already-granted permission.
+    function check() {
+      if (cancelled) return
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          if (cancelled) return
+          const d = haversineMeters(
+            { lat: pos.coords.latitude, lng: pos.coords.longitude },
+            venue,
+          )
+          setDistance(d)
+          if (d <= limit) {
+            outsideCount = 0
+            setStatus('inside')
+          } else {
+            outsideCount += 1
+            setStatus('outside')
+            if (outsideCount >= exitThreshold && !firedExit) {
+              firedExit = true
+              onExit?.()
+            }
           }
-        }
-      },
-      (err) => {
-        // 1 = PERMISSION_DENIED, 2 = POSITION_UNAVAILABLE, 3 = TIMEOUT
-        if (err.code === 1) setStatus('denied')
-      },
-      {
-        enableHighAccuracy: true,
-        maximumAge:         15_000,   // accept up to 15s cached
-        timeout:            30_000,   // give iOS a chance to respond
-      },
-    )
+        },
+        (err) => {
+          if (err.code === 1) setStatus('denied')
+        },
+        { enableHighAccuracy: true, maximumAge: 15_000, timeout: 30_000 },
+      )
+    }
 
-    return () => navigator.geolocation.clearWatch(watchId)
+    check()
+    const id = setInterval(check, 30_000)
+    return () => { cancelled = true; clearInterval(id) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, venue.lat, venue.lng, radiusMeters, gracMeters, exitThreshold])
 
