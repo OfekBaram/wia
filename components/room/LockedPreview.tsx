@@ -1,15 +1,17 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
-import { QrCode, MapPin, Camera, Users, Sparkles, ArrowRight } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { QrCode, MapPin, Camera, Users, Sparkles, ArrowRight, Loader, AlertCircle } from 'lucide-react'
 import type { Location, PresenceProfile } from '@/lib/types'
+import { getCurrentCoords, haversineMeters, GPS_GRACE_METERS } from '@/lib/geo'
 import { VibeBar } from './VibeBar'
 
 interface LockedPreviewProps {
-  location: Location
-  presence: PresenceProfile[]
-  // For anon viewers, RLS hides the presence rows but we still want to show
-  // the real count. `location.liveCount` carries it from the server.
+  location:     Location
+  presence:     PresenceProfile[]
+  isKnownUser?: boolean
 }
 
 const REQUIREMENTS = [
@@ -18,7 +20,29 @@ const REQUIREMENTS = [
   { icon: Camera,   label: 'Take a live selfie',             color: 'text-wia-pink' },
 ]
 
-export function LockedPreview({ location, presence }: LockedPreviewProps) {
+type GpsState = 'idle' | 'checking' | 'too_far' | 'error'
+
+export function LockedPreview({ location, presence, isKnownUser }: LockedPreviewProps) {
+  const router = useRouter()
+  const [gps,      setGps]      = useState<GpsState>('idle')
+  const [distance, setDistance] = useState<number | null>(null)
+
+  async function handleJoin() {
+    setGps('checking')
+    try {
+      const coords = await getCurrentCoords()
+      const dist   = haversineMeters(coords, location.coordinates)
+      setDistance(dist)
+      if (dist > location.radiusMeters + GPS_GRACE_METERS) {
+        setGps('too_far')
+        return
+      }
+      router.push(`/${location.slug}/join`)
+    } catch {
+      setGps('error')
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Aggregate vibe — no identity revealed */}
@@ -96,19 +120,55 @@ export function LockedPreview({ location, presence }: LockedPreviewProps) {
             </div>
           </div>
 
-          {/* CTA */}
-          <Link
-            href="/scan"
-            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-gradient-to-r from-wia-purple to-wia-pink text-white font-semibold hover:opacity-90 transition-all shadow-xl shadow-purple-500/30"
-          >
-            <QrCode size={18} />
-            Open scanner
-            <ArrowRight size={16} />
-          </Link>
+          {/* GPS error states */}
+          {gps === 'too_far' && (
+            <div className="flex items-start gap-2 px-4 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-600 text-sm max-w-sm mx-auto text-left">
+              <AlertCircle size={16} className="shrink-0 mt-0.5" />
+              <span>You&apos;re about <strong>{Math.round(distance ?? 0)}m</strong> away. Get closer to <strong>{location.name}</strong> and try again.</span>
+            </div>
+          )}
+          {gps === 'error' && (
+            <div className="flex items-start gap-2 px-4 py-3 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm max-w-sm mx-auto text-left">
+              <AlertCircle size={16} className="shrink-0 mt-0.5" />
+              <span>Could not read your location. Make sure location access is allowed.</span>
+            </div>
+          )}
 
-          <p className="text-xs text-wia-ink/55 max-w-xs mx-auto">
-            Already at the venue? Look for the WIA QR code on tables or at the entrance.
-          </p>
+          {/* CTA */}
+          {isKnownUser ? (
+            <div className="space-y-3">
+              <button
+                onClick={handleJoin}
+                disabled={gps === 'checking'}
+                className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-gradient-to-r from-wia-purple to-wia-pink text-white font-semibold hover:opacity-90 disabled:opacity-70 transition-all shadow-xl shadow-purple-500/30"
+              >
+                {gps === 'checking' ? (
+                  <><Loader size={18} className="animate-spin" /> Checking your location…</>
+                ) : gps === 'too_far' || gps === 'error' ? (
+                  <><MapPin size={18} /> Try again</>
+                ) : (
+                  <>Join the room <ArrowRight size={16} /></>
+                )}
+              </button>
+              <p className="text-xs text-wia-ink/55">
+                We&apos;ll verify you&apos;re at the venue via GPS.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <Link
+                href="/scan"
+                className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-gradient-to-r from-wia-purple to-wia-pink text-white font-semibold hover:opacity-90 transition-all shadow-xl shadow-purple-500/30"
+              >
+                <QrCode size={18} />
+                Open scanner
+                <ArrowRight size={16} />
+              </Link>
+              <p className="text-xs text-wia-ink/55 max-w-xs mx-auto">
+                Already at the venue? Look for the WIA QR code on tables or at the entrance.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

@@ -18,7 +18,7 @@ export function RoomGate({
   location, presence, isMember, currentUserId,
   likesSent, likesReceived, onLikesChanged,
 }: RoomGateProps) {
-  if (!isMember) return <LockedPreview location={location} presence={presence} />
+  if (!isMember) return <LockedPreview location={location} presence={presence} isKnownUser={!!currentUserId} />
   return (
     <PresenceGrid
       presence={presence}
