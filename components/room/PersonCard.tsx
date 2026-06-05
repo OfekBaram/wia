@@ -17,6 +17,7 @@ interface PersonCardProps {
   onLike?:          () => void
   onUnlike?:        () => void
   onOpenChat?:      () => void
+  onClick?:         () => void
 }
 
 const GENDER_ICON: Record<string, string> = {
@@ -28,7 +29,7 @@ const GENDER_ICON: Record<string, string> = {
 
 export function PersonCard({
   person, isCurrentUser, iLiked, likedMe, likesRemaining = 5,
-  onLike, onUnlike, onOpenChat,
+  onLike, onUnlike, onOpenChat, onClick,
 }: PersonCardProps) {
   const [pending,        setPending]        = useState(false)
   const [optimisticLike, setOptimisticLike] = useState<boolean | null>(null)
@@ -81,8 +82,8 @@ export function PersonCard({
         </div>
       )}
 
-      {/* Photo */}
-      <div className="relative overflow-hidden">
+      {/* Photo — click to open detail */}
+      <div className="relative overflow-hidden cursor-pointer" onClick={onClick}>
         <Image
           src={person.selfieUrl}
           alt={person.name}

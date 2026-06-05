@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { Filter, Heart } from 'lucide-react'
 import type { PresenceProfile } from '@/lib/types'
 import { PersonCard } from './PersonCard'
+import { PersonDetailOverlay } from './PersonDetailOverlay'
 import { VibeBar } from './VibeBar'
 import { ChatPanel } from './ChatPanel'
 import { ChatLauncher } from './ChatLauncher'
@@ -47,8 +48,9 @@ export function PresenceGrid({
   const [chatWith,    setChatWith]    = useState<PresenceProfile | null>(null)
   const [showList,    setShowList]    = useState(false)
   const [hasChatted,  setHasChatted]  = useState(false)
-  const [busy,        setBusy]        = useState<Set<string>>(new Set())
-  const [unreadCount, setUnreadCount] = useState(0)
+  const [busy,           setBusy]           = useState<Set<string>>(new Set())
+  const [unreadCount,    setUnreadCount]    = useState(0)
+  const [selectedPerson, setSelectedPerson] = useState<PresenceProfile | null>(null)
   const [toast,       setToast]       = useState<string | null>(null)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -275,6 +277,7 @@ export function PresenceGrid({
             onLike={()    => handleLike(person.userId)}
             onUnlike={()  => handleUnlike(person.userId)}
             onOpenChat={() => openChat(person)}
+            onClick={() => setSelectedPerson(person)}
           />
         ))}
       </div>
@@ -300,6 +303,21 @@ export function PresenceGrid({
           matches={matches}
           onPick={openChat}
           onClose={() => setShowList(false)}
+        />
+      )}
+
+      {/* Person detail overlay */}
+      {selectedPerson && (
+        <PersonDetailOverlay
+          person={selectedPerson}
+          isCurrentUser={selectedPerson.userId === currentUserId}
+          iLiked={likesSent.has(selectedPerson.userId)}
+          likedMe={likesReceived.has(selectedPerson.userId)}
+          likesRemaining={likesRemaining}
+          onLike={() => handleLike(selectedPerson.userId)}
+          onUnlike={() => handleUnlike(selectedPerson.userId)}
+          onOpenChat={() => openChat(selectedPerson)}
+          onClose={() => setSelectedPerson(null)}
         />
       )}
 
