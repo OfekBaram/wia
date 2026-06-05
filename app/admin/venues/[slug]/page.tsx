@@ -52,6 +52,7 @@ export default function AdminVenuePage({ params }: Props) {
           cache:       'no-store',
         })
         if (cancelled) return
+        if (res.status === 401) { window.location.assign('/admin/login'); return }
         if (res.status === 403) {
           setForbidden(true); setLoaded(true); return
         }

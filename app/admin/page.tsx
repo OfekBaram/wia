@@ -96,6 +96,7 @@ export default function AdminDashboard() {
     async function load() {
       try {
         const res = await fetch('/api/admin/venues/list', { credentials: 'include', cache: 'no-store' })
+        if (res.status === 401) { window.location.assign('/admin/login'); return }
         if (!res.ok) {
           if (!cancelled) setVenues([])
           return
