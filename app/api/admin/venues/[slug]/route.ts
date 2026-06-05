@@ -83,27 +83,40 @@ export async function PATCH(req: Request, params: RouteParams) {
   }
 
   const body = await req.json().catch(() => ({}))
-  if (!body.imageDataUrl) return NextResponse.json({ error: 'imageDataUrl required' }, { status: 400 })
 
-  const match = (body.imageDataUrl as string).match(/^data:(image\/\w+);base64,(.+)$/)
-  if (!match) return NextResponse.json({ error: 'Invalid image data' }, { status: 400 })
+  // ── Image upload ──────────────────────────────────────────────────────────
+  if (body.imageDataUrl) {
+    const match = (body.imageDataUrl as string).match(/^data:(image\/\w+);base64,(.+)$/)
+    if (!match) return NextResponse.json({ error: 'Invalid image data' }, { status: 400 })
+    const mimeType = match[1]
+    const ext = mimeType.split('/')[1] ?? 'jpg'
+    const buf = Buffer.from(match[2], 'base64')
+    const path = `${c.slug}/cover.${ext}`
+    const { error: upErr } = await c.admin.storage
+      .from('venue-images')
+      .upload(path, buf, { contentType: mimeType, upsert: true })
+    if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 })
+    const { data: urlData } = c.admin.storage.from('venue-images').getPublicUrl(path)
+    await c.admin.from('venues').update({ image_url: urlData.publicUrl }).eq('slug', c.slug)
+    return NextResponse.json({ ok: true, imageUrl: urlData.publicUrl })
+  }
 
-  const mimeType = match[1]
-  const ext = mimeType.split('/')[1] ?? 'jpg'
-  const buf = Buffer.from(match[2], 'base64')
-  const path = `${c.slug}/cover.${ext}`
+  // ── Venue field update ────────────────────────────────────────────────────
+  const updates: Record<string, unknown> = {}
+  if (typeof body.name     === 'string' && body.name.trim().length >= 2) updates.name     = body.name.trim()
+  if (typeof body.tagline  === 'string')                                  updates.tagline  = body.tagline.trim()
+  if (typeof body.category === 'string')                                  updates.category = body.category
+  if (typeof body.lat      === 'number')                                  updates.lat      = body.lat
+  if (typeof body.lng      === 'number')                                  updates.lng      = body.lng
+  if (typeof body.radiusMeters === 'number' && body.radiusMeters >= 10)   updates.radius_meters = body.radiusMeters
 
-  const { error: upErr } = await c.admin.storage
-    .from('venue-images')
-    .upload(path, buf, { contentType: mimeType, upsert: true })
-  if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 })
+  if (Object.keys(updates).length === 0) {
+    return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
+  }
 
-  const { data: urlData } = c.admin.storage.from('venue-images').getPublicUrl(path)
-  const imageUrl = urlData.publicUrl
-
-  await c.admin.from('venues').update({ image_url: imageUrl }).eq('slug', c.slug)
-
-  return NextResponse.json({ ok: true, imageUrl })
+  const { error } = await c.admin.from('venues').update(updates).eq('slug', c.slug)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true })
 }
 
 export async function DELETE(_req: Request, params: RouteParams) {

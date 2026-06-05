@@ -4,7 +4,7 @@ import { use, useEffect, useState } from 'react'
 import { AnalyticsTab } from '@/components/admin/AnalyticsTab'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ArrowLeft, ExternalLink, Trash2, MapPin, Sparkles, ImagePlus, X } from 'lucide-react'
+import { ArrowLeft, ExternalLink, Trash2, MapPin, Sparkles, ImagePlus, Save, Eye, EyeOff } from 'lucide-react'
 import Image from 'next/image'
 import { venueRoomUrl, venueScanUrl } from '@/lib/api/venues'
 import { VENUE_EMOJI } from '@/lib/mock-data'
@@ -31,6 +31,17 @@ export default function AdminVenuePage({ params }: Props) {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [uploadingImg, setUploadingImg] = useState(false)
   const [tab,          setTab]          = useState<'overview' | 'analytics'>(tabParam === 'analytics' ? 'analytics' : 'overview')
+  // Edit venue fields
+  const [editName,     setEditName]     = useState('')
+  const [editTagline,  setEditTagline]  = useState('')
+  const [editRadius,   setEditRadius]   = useState(50)
+  const [savingVenue,  setSavingVenue]  = useState(false)
+  const [venueMsg,     setVenueMsg]     = useState<string | null>(null)
+  // Change password
+  const [newPassword,  setNewPassword]  = useState('')
+  const [showPw,       setShowPw]       = useState(false)
+  const [savingPw,     setSavingPw]     = useState(false)
+  const [pwMsg,        setPwMsg]        = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -52,7 +63,11 @@ export default function AdminVenuePage({ params }: Props) {
         }
         const json = await res.json()
         if (cancelled) return
-        setVenue({ ...json.venue, createdAt: new Date(json.venue.createdAt), imageUrl: json.venue.imageUrl ?? null })
+        const v = { ...json.venue, createdAt: new Date(json.venue.createdAt), imageUrl: json.venue.imageUrl ?? null }
+        setVenue(v)
+        setEditName(v.name ?? '')
+        setEditTagline(v.tagline ?? '')
+        setEditRadius(v.radiusMeters ?? 50)
         setLiveCount(json.liveCount ?? 0)
       } finally {
         if (!cancelled) setLoaded(true)
@@ -121,6 +136,41 @@ export default function AdminVenuePage({ params }: Props) {
       }
     }
     reader.readAsDataURL(file)
+  }
+
+  async function handleSaveVenue(e: React.FormEvent) {
+    e.preventDefault()
+    setSavingVenue(true); setVenueMsg(null)
+    try {
+      const res = await fetch(`/api/admin/venues/${encodeURIComponent(venue!.slug)}`, {
+        method: 'PATCH', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editName, tagline: editTagline, radiusMeters: editRadius }),
+      })
+      const json = await res.json()
+      if (!res.ok) { setVenueMsg(json.error ?? 'Failed to save'); return }
+      setVenue(v => v ? { ...v, name: editName, tagline: editTagline, radiusMeters: editRadius } : v)
+      setVenueMsg('✓ Saved')
+      setTimeout(() => setVenueMsg(null), 3000)
+    } finally { setSavingVenue(false) }
+  }
+
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault()
+    if (newPassword.length < 8) { setPwMsg('Minimum 8 characters'); return }
+    setSavingPw(true); setPwMsg(null)
+    try {
+      const res = await fetch('/api/admin/change-password', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newPassword }),
+      })
+      const json = await res.json()
+      if (!res.ok) { setPwMsg(json.error ?? 'Failed'); return }
+      setNewPassword('')
+      setPwMsg('✓ Password updated')
+      setTimeout(() => setPwMsg(null), 3000)
+    } finally { setSavingPw(false) }
   }
 
   const emoji   = VENUE_EMOJI[venue.category]
@@ -293,6 +343,88 @@ export default function AdminVenuePage({ params }: Props) {
                 <div className="text-xs text-wia-ink/60">Avg stay</div>
               </div>
             </div>
+          </GlassCard>
+
+          {/* Edit venue */}
+          <GlassCard className="p-5">
+            <h2 className="font-display font-semibold text-wia-ink mb-4">Edit venue</h2>
+            <form onSubmit={handleSaveVenue} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-wia-ink/60 mb-1.5">Venue name</label>
+                <input
+                  value={editName} onChange={e => setEditName(e.target.value)}
+                  maxLength={60} required
+                  className="w-full glass rounded-xl px-4 py-2.5 text-wia-ink placeholder:text-wia-ink/40 outline-none focus:ring-1 focus:ring-wia-purple/50 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-wia-ink/60 mb-1.5">Tagline</label>
+                <input
+                  value={editTagline} onChange={e => setEditTagline(e.target.value)}
+                  maxLength={80} placeholder="Optional short description"
+                  className="w-full glass rounded-xl px-4 py-2.5 text-wia-ink placeholder:text-wia-ink/40 outline-none focus:ring-1 focus:ring-wia-purple/50 text-sm"
+                />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-medium text-wia-ink/60">Geofence radius</label>
+                  <span className="text-xs font-mono text-wia-ink">{editRadius}m</span>
+                </div>
+                <input type="range" min={10} max={500} step={5} value={editRadius}
+                  onChange={e => setEditRadius(parseInt(e.target.value))}
+                  className="w-full accent-wia-purple"
+                />
+              </div>
+              <div className="flex items-center gap-3">
+                <button type="submit" disabled={savingVenue}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-wia-purple to-wia-pink text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-all"
+                >
+                  <Save size={14} />
+                  {savingVenue ? 'Saving…' : 'Save changes'}
+                </button>
+                {venueMsg && (
+                  <span className={`text-sm ${venueMsg.startsWith('✓') ? 'text-emerald-500' : 'text-red-400'}`}>
+                    {venueMsg}
+                  </span>
+                )}
+              </div>
+            </form>
+          </GlassCard>
+
+          {/* Change password */}
+          <GlassCard className="p-5">
+            <h2 className="font-display font-semibold text-wia-ink mb-4">Change password</h2>
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-wia-ink/60 mb-1.5">New password</label>
+                <div className="relative">
+                  <input
+                    type={showPw ? 'text' : 'password'}
+                    value={newPassword} onChange={e => setNewPassword(e.target.value)}
+                    placeholder="Minimum 8 characters" minLength={8}
+                    className="w-full glass rounded-xl px-4 py-2.5 pr-10 text-wia-ink placeholder:text-wia-ink/40 outline-none focus:ring-1 focus:ring-wia-purple/50 text-sm"
+                  />
+                  <button type="button" onClick={() => setShowPw(p => !p)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-wia-ink/40 hover:text-wia-ink/70"
+                  >
+                    {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <button type="submit" disabled={savingPw || newPassword.length < 8}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-wia-purple to-wia-pink text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-all"
+                >
+                  <Save size={14} />
+                  {savingPw ? 'Updating…' : 'Update password'}
+                </button>
+                {pwMsg && (
+                  <span className={`text-sm ${pwMsg.startsWith('✓') ? 'text-emerald-500' : 'text-red-400'}`}>
+                    {pwMsg}
+                  </span>
+                )}
+              </div>
+            </form>
           </GlassCard>
         </div>
 
