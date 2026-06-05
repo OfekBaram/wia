@@ -13,10 +13,9 @@ import { StepProfile } from '@/components/join/StepProfile'
 import { cn } from '@/lib/cn'
 
 import { supabase } from '@/lib/supabase/client'
-import { getVenueBySlug, getLiveCountBySlug } from '@/lib/api/venues'
 import { joinVenue } from '@/lib/api/presence'
 import { uploadSelfie } from '@/lib/api/selfies'
-import { getMyMasterProfile, upsertMasterProfile, type MasterProfile } from '@/lib/api/master-profile'
+import { upsertMasterProfile, type MasterProfile } from '@/lib/api/master-profile'
 
 const PENDING_KEY = 'wia:pending_join'
 
@@ -101,19 +100,20 @@ export default function JoinPage({ params }: Props) {
 
     async function bootstrap() {
       try {
-        const v = await getVenueBySlug(slug)
+        const res = await fetch(`/api/join/bootstrap?slug=${encodeURIComponent(slug)}`, {
+          credentials: 'include', cache: 'no-store',
+        })
         if (cancelled) return
+        if (!res.ok) { setReady(true); return }
+        const json = await res.json()
+        if (cancelled) return
+        if (!json.venue) { setReady(true); return }
+
+        // Shape venue to match Location type
+        const v = { ...json.venue, createdAt: new Date(json.venue.createdAt) }
         setVenue(v)
-        if (!v) { setReady(true); return }
-
-        const count = await getLiveCountBySlug(v.slug).catch(() => 0)
-        if (cancelled) return
-        setLiveCount(count)
-
-        const profile = await getMyMasterProfile().catch(() => null)
-        if (cancelled) return
-        setMaster(profile)
-
+        setLiveCount(json.venue.liveCount ?? 0)
+        setMaster(json.masterProfile ?? null)
         setReady(true)
       } catch (e) {
         console.error('join bootstrap failed', e)
