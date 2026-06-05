@@ -83,7 +83,7 @@ export function ChatPanel({ venueSlug, other, currentUserId, onClose }: ChatPane
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm">
-      <div className="w-full sm:max-w-md glass-strong rounded-t-3xl sm:rounded-3xl border border-wia-ink/15 max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
+      <div className="w-full sm:max-w-md glass-strong rounded-t-3xl sm:rounded-3xl border border-wia-ink/15 max-h-[85dvh] flex flex-col overflow-hidden shadow-2xl">
         <div className="px-4 py-3 border-b border-wia-ink/10 flex items-center gap-3">
           <Image
             src={other.selfieUrl}
@@ -153,7 +153,7 @@ export function ChatPanel({ venueSlug, other, currentUserId, onClose }: ChatPane
               placeholder="Type a message..."
               maxLength={1000}
               disabled={sending}
-              className="flex-1 glass rounded-xl px-4 py-2.5 text-wia-ink placeholder:text-wia-ink/55 outline-none focus:ring-1 focus:ring-wia-purple/50 text-sm"
+              className="flex-1 glass rounded-xl px-4 py-2.5 text-wia-ink placeholder:text-wia-ink/55 outline-none focus:ring-1 focus:ring-wia-purple/50 text-base sm:text-sm"
             />
             <button
               type="submit"
