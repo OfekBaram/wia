@@ -2,32 +2,27 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { QrCode, MapPin, Lock, Plus, Sparkles } from 'lucide-react'
+import { QrCode, Lock, Plus, Sparkles } from 'lucide-react'
 import { LiveBadge } from '@/components/ui/LiveBadge'
 import { GlassCard } from '@/components/ui/GlassCard'
-import { listVenues, getLiveCountBySlug } from '@/lib/api/venues'
 import { VENUE_EMOJI } from '@/lib/mock-data'
-import type { Location } from '@/lib/types'
+
+interface VenueItem {
+  slug: string; name: string; tagline: string; category: string
+  liveCount: number; coordinates: { lat: number; lng: number }
+}
 
 export function LiveVenues() {
-  const [venues,  setVenues]  = useState<Location[]>([])
+  const [venues,  setVenues]  = useState<VenueItem[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
-    async function load() {
-      try {
-        const list = await listVenues()
-        if (cancelled) return
-        const withCounts = await Promise.all(
-          list.map(async v => ({ ...v, liveCount: await getLiveCountBySlug(v.slug).catch(() => 0) })),
-        )
-        if (cancelled) return
-        setVenues(withCounts)
-      } catch { /* show empty state */ }
-      finally { if (!cancelled) setLoading(false) }
-    }
-    load()
+    fetch('/api/venues/list', { cache: 'no-store' })
+      .then(r => r.json())
+      .then(d => { if (!cancelled) setVenues(d.venues ?? []) })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
   }, [])
 
@@ -93,7 +88,7 @@ export function LiveVenues() {
                 </div>
 
                 <div className="flex items-start justify-between mb-4">
-                  <span className="text-3xl">{VENUE_EMOJI[venue.category]}</span>
+                  <span className="text-3xl">{VENUE_EMOJI[venue.category as keyof typeof VENUE_EMOJI] ?? '📍'}</span>
                   <LiveBadge count={venue.liveCount} size="sm" />
                 </div>
 
@@ -102,11 +97,7 @@ export function LiveVenues() {
                 </h3>
                 <p className="text-xs text-wia-ink/60 capitalize mb-4">{venue.category}</p>
 
-                <div className="flex items-center justify-between text-[10px] uppercase tracking-wider">
-                  <span className="flex items-center gap-1 text-wia-ink/55">
-                    <MapPin size={10} />
-                    {venue.coordinates.lat.toFixed(2)}, {venue.coordinates.lng.toFixed(2)}
-                  </span>
+                <div className="flex items-center justify-end text-[10px] uppercase tracking-wider">
                   <span className="flex items-center gap-1 text-wia-purple/80">
                     <QrCode size={10} />
                     Scan at venue
