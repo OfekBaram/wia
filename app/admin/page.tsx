@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Plus, ArrowRight, QrCode, Sparkles } from 'lucide-react'
+import { Plus, ArrowRight, QrCode, Sparkles, Trash2 } from 'lucide-react'
 import { VENUE_EMOJI } from '@/lib/mock-data'
 import type { Location } from '@/lib/types'
 import { LiveBadge } from '@/components/ui/LiveBadge'
@@ -35,30 +35,51 @@ function StatTile({
   )
 }
 
-function Row({ venue }: { venue: VenueRow }) {
+function Row({ venue, onDelete }: { venue: VenueRow; onDelete?: (slug: string) => void }) {
   const emoji = VENUE_EMOJI[venue.category as keyof typeof VENUE_EMOJI] ?? '📍'
+  const [deleting, setDeleting] = useState(false)
+
+  async function handleDelete(e: React.MouseEvent) {
+    e.preventDefault()
+    if (!confirm(`Delete "${venue.name}"? This cannot be undone.`)) return
+    setDeleting(true)
+    await fetch(`/api/admin/venues/${encodeURIComponent(venue.slug)}`, {
+      method: 'DELETE', credentials: 'include',
+    })
+    onDelete?.(venue.slug)
+  }
+
   return (
-    <Link
-      href={`/admin/venues/${venue.slug}`}
-      className="glass rounded-2xl px-5 py-4 flex items-center gap-4 hover:bg-white/5 transition-all group"
-    >
-      <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-2xl shrink-0">
-        {emoji}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-0.5">
-          <span className="font-display font-semibold text-wia-ink">{venue.name}</span>
-          <span className="text-[10px] uppercase tracking-wider text-wia-ink/55 capitalize">
-            {venue.category}
-          </span>
+    <div className="glass rounded-2xl px-5 py-4 flex items-center gap-4 group">
+      <Link href={`/admin/venues/${venue.slug}`} className="flex items-center gap-4 flex-1 min-w-0 hover:opacity-80 transition-opacity">
+        <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-2xl shrink-0">
+          {emoji}
         </div>
-        <div className="text-xs text-wia-ink/60 font-mono truncate">wia.com/{venue.slug}</div>
-      </div>
-      <div className="hidden sm:flex items-center gap-4">
-        <LiveBadge count={venue.liveCount} size="sm" />
-      </div>
-      <ArrowRight size={16} className="text-wia-ink/55 group-hover:text-wia-ink group-hover:translate-x-0.5 transition-all" />
-    </Link>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className="font-display font-semibold text-wia-ink">{venue.name}</span>
+            <span className="text-[10px] uppercase tracking-wider text-wia-ink/55 capitalize">
+              {venue.category}
+            </span>
+          </div>
+          <div className="text-xs text-wia-ink/60 font-mono truncate">wia.com/{venue.slug}</div>
+        </div>
+        <div className="hidden sm:flex items-center gap-4">
+          <LiveBadge count={venue.liveCount} size="sm" />
+        </div>
+        <ArrowRight size={16} className="text-wia-ink/55 group-hover:text-wia-ink group-hover:translate-x-0.5 transition-all" />
+      </Link>
+      {onDelete && (
+        <button
+          onClick={handleDelete}
+          disabled={deleting}
+          className="shrink-0 p-2 rounded-xl text-wia-ink/40 hover:text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-30"
+          title="Delete venue"
+        >
+          <Trash2 size={15} />
+        </button>
+      )}
+    </div>
   )
 }
 
@@ -173,7 +194,13 @@ export default function AdminDashboard() {
 
         {!loading && hasVenue && (
           <div className="space-y-2">
-            {venues.map(v => <Row key={v.id} venue={v} />)}
+            {venues.map(v => (
+              <Row
+                key={v.id}
+                venue={v}
+                onDelete={isSuperAdmin ? slug => setVenues(vs => vs.filter(x => x.slug !== slug)) : undefined}
+              />
+            ))}
           </div>
         )}
       </div>
