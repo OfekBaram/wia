@@ -39,7 +39,7 @@ export function PersonDetailOverlay({
       {/* Backdrop close */}
       <div className="absolute inset-0" onClick={onClose} />
 
-      <div className="relative w-full sm:max-w-sm glass-strong rounded-t-3xl sm:rounded-3xl border border-wia-ink/15 overflow-hidden shadow-2xl">
+      <div className="relative z-10 w-full sm:max-w-sm glass-strong rounded-t-3xl sm:rounded-3xl border border-wia-ink/15 overflow-hidden shadow-2xl sm:max-h-[90vh] sm:overflow-y-auto">
         {/* Close button */}
         <button
           onClick={onClose}

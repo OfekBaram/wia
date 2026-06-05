@@ -119,7 +119,7 @@ export function PersonCard({
           <div className="absolute bottom-2 right-2 flex items-center gap-1.5">
             {/* Chat button — enabled only on match */}
             <button
-              onClick={() => isMatch && onOpenChat?.()}
+              onClick={(e) => { e.stopPropagation(); isMatch && onOpenChat?.() }}
               disabled={!isMatch}
               className={cn(
                 'w-9 h-9 rounded-full flex items-center justify-center transition-all',
@@ -134,7 +134,7 @@ export function PersonCard({
 
             {/* Heart button */}
             <button
-              onClick={handleHeart}
+              onClick={(e) => { e.stopPropagation(); handleHeart() }}
               disabled={pending || (!effectiveLiked && likesRemaining <= 0)}
               className={cn(
                 'w-9 h-9 rounded-full flex items-center justify-center transition-all',
