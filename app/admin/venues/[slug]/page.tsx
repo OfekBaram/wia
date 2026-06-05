@@ -309,7 +309,7 @@ export default function AdminVenuePage({ params }: Props) {
               <span className="font-mono text-wia-ink font-medium">{venue.radiusMeters}m</span>
             </div>
             <a
-              href={`https://www.openstreetmap.org/?mlat=${venue.coordinates.lat}&mlon=${venue.coordinates.lng}&zoom=18`}
+              href={`https://www.google.com/maps?q=${venue.coordinates.lat},${venue.coordinates.lng}`}
               target="_blank" rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-xs text-wia-purple/80 hover:text-wia-purple transition-colors"
             >
