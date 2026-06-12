@@ -8,6 +8,7 @@ import type { Location, PresenceProfile, Gender } from '@/lib/types'
 import { RoomHeader } from '@/components/room/RoomHeader'
 import { RoomGate } from '@/components/room/RoomGate'
 import { MatchOverlay } from '@/components/room/MatchOverlay'
+import { PushPrompt } from '@/components/room/PushPrompt'
 import { useGeofence } from '@/lib/hooks/useGeofence'
 
 interface Props {
@@ -234,7 +235,8 @@ export default function RoomPage({ params }: Props) {
         </div>
       )}
 
-      <main className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 py-6 sm:py-8">
+      <main className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 py-6 sm:py-8 space-y-4">
+        {isMember && <PushPrompt />}
         <RoomGate
           location={venueWithCount}
           presence={presence}

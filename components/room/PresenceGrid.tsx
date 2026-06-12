@@ -155,6 +155,30 @@ export function PresenceGrid({
     }
   }
 
+  async function handleModeration(targetUserId: string, action: 'hide' | 'report') {
+    const person = presence.find(p => p.userId === targetUserId)
+    const name = person?.name ?? 'this person'
+    if (action === 'report' && !window.confirm(`Report ${name}? They will also be hidden from your view.`)) return
+    if (action === 'hide' && !window.confirm(`Hide ${name} from your view for this visit?`)) return
+    try {
+      const res = await fetch('/api/moderation', {
+        method:      'POST',
+        headers:     { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body:        JSON.stringify({ venueSlug, targetUserId, action }),
+      })
+      if (res.ok) {
+        showToast(action === 'report' ? `🚩 Reported and hid ${name}` : `🙈 ${name} hidden`)
+        setSelectedPerson(null)
+        onLikesChanged() // re-fetch the room — server now filters them out
+      } else {
+        showToast('Something went wrong, try again')
+      }
+    } catch {
+      showToast('Something went wrong, try again')
+    }
+  }
+
   const displayed = useMemo(() => {
     let list = [...presence]
     if (filter === 'matches')  list = list.filter(p => likesSent.has(p.userId) && likesReceived.has(p.userId))
@@ -259,6 +283,8 @@ export function PresenceGrid({
             onLike={()    => handleLike(person.userId)}
             onOpenChat={() => openChat(person)}
             onClick={() => setSelectedPerson(person)}
+            onHide={()   => handleModeration(person.userId, 'hide')}
+            onReport={() => handleModeration(person.userId, 'report')}
           />
         ))}
       </div>

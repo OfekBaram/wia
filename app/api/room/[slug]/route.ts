@@ -61,7 +61,7 @@ export async function GET(_req: Request, { params }: RouteParams) {
 
     // Only members get to see the full presence list + likes
     if (myPresenceId) {
-      const [presRes, sentRes, recvRes] = await Promise.all([
+      const [presRes, sentRes, recvRes, hidesRes] = await Promise.all([
         admin
           .from('presence')
           .select('id, user_id, name, age, gender, status_text, selfie_url, joined_at, is_visible, is_ghost_mode')
@@ -77,10 +77,15 @@ export async function GET(_req: Request, { params }: RouteParams) {
           .select('from_user_id')
           .eq('venue_id', venue.id)
           .eq('to_user_id', userId),
+        admin.from('user_hides')
+          .select('hidden_user_id')
+          .eq('venue_id', venue.id)
+          .eq('user_id', userId),
       ])
-      presence      = presRes.data ?? []
+      const hidden = new Set((hidesRes.data ?? []).map(r => r.hidden_user_id))
+      presence      = (presRes.data ?? []).filter(p => !hidden.has((p as { user_id: string }).user_id))
       likesSent     = (sentRes.data ?? []).map(r => r.to_user_id)
-      likesReceived = (recvRes.data ?? []).map(r => r.from_user_id)
+      likesReceived = (recvRes.data ?? []).map(r => r.from_user_id).filter(id => !hidden.has(id))
     }
   }
 

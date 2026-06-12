@@ -6,6 +6,7 @@
 
 import { NextResponse } from 'next/server'
 import { adminClient, serverClient } from '@/lib/supabase/server'
+import { sendPushToUser } from '@/lib/push'
 
 export const dynamic = 'force-dynamic'
 
@@ -75,6 +76,20 @@ export async function POST(req: Request, params: RouteParams) {
     text:         trimmed,
   }).select('*').single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Notify the recipient — collapses to one notification per sender via tag
+  const [{ data: venue }, { data: sender }] = await Promise.all([
+    c.admin.from('venues').select('slug, name').eq('id', c.venueId).maybeSingle(),
+    c.admin.from('presence').select('name').eq('venue_id', c.venueId).eq('user_id', c.me).maybeSingle(),
+  ])
+  if (venue) {
+    await sendPushToUser(c.otherUserId, {
+      title: `${sender?.name ?? 'Someone'} sent you a message`,
+      body:  trimmed.length > 80 ? `${trimmed.slice(0, 77)}...` : trimmed,
+      url:   `/${venue.slug}`,
+      tag:   `chat-${c.venueId}-${c.me}`,
+    })
+  }
 
   return NextResponse.json({ ok: true, message: data })
 }

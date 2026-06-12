@@ -8,6 +8,7 @@
 
 import { NextResponse } from 'next/server'
 import { adminClient, serverClient } from '@/lib/supabase/server'
+import { sendPushToUser } from '@/lib/push'
 
 export const dynamic = 'force-dynamic'
 
@@ -59,6 +60,23 @@ export async function POST(req: Request) {
     .eq('from_user_id', toUserId)
     .eq('to_user_id', fromUserId)
     .maybeSingle()
+
+  if (reverse) {
+    // Notify the person whose like was just reciprocated (the liker sees the
+    // in-app overlay; the other side may have their phone in their pocket).
+    const [{ data: venue }, { data: liker }] = await Promise.all([
+      admin.from('venues').select('slug, name').eq('id', venueId).maybeSingle(),
+      admin.from('presence').select('name').eq('venue_id', venueId).eq('user_id', fromUserId).maybeSingle(),
+    ])
+    if (venue) {
+      await sendPushToUser(toUserId, {
+        title: "It's a match! 💜",
+        body:  `You and ${liker?.name ?? 'someone'} liked each other at ${venue.name}.`,
+        url:   `/${venue.slug}`,
+        tag:   `match-${venueId}-${fromUserId}`,
+      })
+    }
+  }
 
   return NextResponse.json({ ok: true, isMatch: !!reverse })
 }

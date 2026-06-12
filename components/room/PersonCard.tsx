@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { Heart, MessageCircle } from 'lucide-react'
+import { Heart, MessageCircle, MoreVertical, EyeOff, Flag } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import type { PresenceProfile } from '@/lib/types'
 import { LiveDot } from '@/components/ui/LiveBadge'
@@ -17,6 +17,8 @@ interface PersonCardProps {
   onLike?:          () => void
   onOpenChat?:      () => void
   onClick?:         () => void
+  onHide?:          () => void
+  onReport?:        () => void
 }
 
 const GENDER_ICON: Record<string, string> = {
@@ -28,10 +30,11 @@ const GENDER_ICON: Record<string, string> = {
 
 export function PersonCard({
   person, isCurrentUser, iLiked, likedMe, likesRemaining = 5,
-  onLike, onOpenChat, onClick,
+  onLike, onOpenChat, onClick, onHide, onReport,
 }: PersonCardProps) {
   const [pending,        setPending]        = useState(false)
   const [optimisticLike, setOptimisticLike] = useState<boolean | null>(null)
+  const [menuOpen,       setMenuOpen]       = useState(false)
 
   const effectiveLiked = optimisticLike !== null ? optimisticLike : (iLiked ?? false)
   const isMatch  = effectiveLiked && likedMe
@@ -91,8 +94,49 @@ export function PersonCard({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/0 to-transparent" />
 
+        {/* 3-dot menu — hide / report (not on own card) */}
+        {!isCurrentUser && (onHide || onReport) && (
+          <div className="absolute top-2 right-2 z-20">
+            <button
+              onClick={(e) => { e.stopPropagation(); setMenuOpen(o => !o) }}
+              className="w-7 h-7 rounded-full bg-black/35 text-white/90 hover:bg-black/55 flex items-center justify-center transition-colors"
+              title="More options"
+            >
+              <MoreVertical size={14} />
+            </button>
+            {menuOpen && (
+              <>
+                {/* click-away backdrop */}
+                <div
+                  className="fixed inset-0 z-10"
+                  onClick={(e) => { e.stopPropagation(); setMenuOpen(false) }}
+                />
+                <div className="absolute right-0 top-8 z-20 w-40 rounded-xl glass-strong border border-wia-ink/15 shadow-xl overflow-hidden">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onHide?.() }}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-wia-ink/80 hover:bg-wia-ink/5 transition-colors"
+                  >
+                    <EyeOff size={13} className="text-wia-ink/50" />
+                    Hide this person
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onReport?.() }}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-red-500 hover:bg-red-500/5 transition-colors border-t border-wia-ink/10"
+                  >
+                    <Flag size={13} />
+                    Report
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         {/* Age + gender chip */}
-        <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full glass-strong text-[10px] font-medium text-wia-ink flex items-center gap-1">
+        <div className={cn(
+          'absolute top-2 px-2 py-0.5 rounded-full glass-strong text-[10px] font-medium text-wia-ink flex items-center gap-1',
+          !isCurrentUser && (onHide || onReport) ? 'right-11' : 'right-2',
+        )}>
           <span className="text-wia-ink/60">{GENDER_ICON[person.gender]}</span>
           {person.age}
         </div>
