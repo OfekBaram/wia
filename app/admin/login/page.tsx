@@ -17,6 +17,10 @@ export default function AdminLoginPage() {
   const [error,           setError]           = useState<string | null>(null)
   const [loading,         setLoading]         = useState(false)
 
+  // Until the session check resolves, render a spinner instead of the form so
+  // already-signed-in admins never see a login-page flash before the redirect.
+  const [checkingSession, setCheckingSession] = useState(true)
+
   // Already signed in with an admin role? Skip the form entirely.
   // Server-side check — never the browser SDK (it hangs once the cookie is set).
   useEffect(() => {
@@ -24,10 +28,12 @@ export default function AdminLoginPage() {
       .then(r => (r.ok ? r.json() : null))
       .then(me => {
         if (me && (me.role === 'super_admin' || me.role === 'venue_owner')) {
-          window.location.assign('/admin')
+          window.location.assign('/admin') // keep the spinner up through navigation
+        } else {
+          setCheckingSession(false)
         }
       })
-      .catch(() => { /* not signed in — show the form */ })
+      .catch(() => setCheckingSession(false))
   }, [])
 
   async function handleSignIn(e: React.FormEvent) {
@@ -92,6 +98,14 @@ export default function AdminLoginPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen bg-wia-bg flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-wia-purple/30 border-t-wia-purple animate-spin" />
+      </div>
+    )
   }
 
   return (
