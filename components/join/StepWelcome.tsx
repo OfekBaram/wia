@@ -5,7 +5,8 @@ import Image from 'next/image'
 import { ArrowRight, Users, Heart, Eye, Clock, MapPin, AlertCircle, Loader } from 'lucide-react'
 import type { Location } from '@/lib/types'
 import { VENUE_EMOJI } from '@/lib/mock-data'
-import { getCurrentCoords, haversineMeters, GPS_GRACE_METERS } from '@/lib/geo'
+import { getCurrentCoords, haversineMeters, GPS_GRACE_METERS, GeoError } from '@/lib/geo'
+import { LocationHelp } from './LocationHelp'
 
 interface StepWelcomeProps {
   location:    Location
@@ -45,6 +46,7 @@ type GpsState =
   | { status: 'idle' }
   | { status: 'checking' }
   | { status: 'too_far'; distance: number }
+  | { status: 'denied' }
   | { status: 'error';   message: string }
 
 export function StepWelcome({ location, liveCount, onContinue, isReturning }: StepWelcomeProps) {
@@ -64,7 +66,8 @@ export function StepWelcome({ location, liveCount, onContinue, isReturning }: St
       // Within range — advance
       onContinue()
     } catch (e) {
-      setGps({ status: 'error', message: e instanceof Error ? e.message : 'Location check failed' })
+      if (e instanceof GeoError && e.kind === 'denied') setGps({ status: 'denied' })
+      else setGps({ status: 'error', message: e instanceof Error ? e.message : 'Location check failed' })
     }
   }
 
@@ -140,6 +143,9 @@ export function StepWelcome({ location, liveCount, onContinue, isReturning }: St
           </div>
         </div>
       )}
+      {gps.status === 'denied' && (
+        <LocationHelp onRetry={handleContinue} checking={checking} />
+      )}
       {gps.status === 'error' && (
         <div className="glass-strong rounded-2xl p-4 border border-red-500/30 bg-red-500/5 space-y-2">
           <div className="flex items-start gap-2">
@@ -163,7 +169,7 @@ export function StepWelcome({ location, liveCount, onContinue, isReturning }: St
             <Loader size={18} className="animate-spin" />
             Verifying your location...
           </>
-        ) : gps.status === 'too_far' || gps.status === 'error' ? (
+        ) : gps.status === 'too_far' || gps.status === 'error' || gps.status === 'denied' ? (
           <>
             <MapPin size={18} />
             Try again

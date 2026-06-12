@@ -5,7 +5,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { QrCode, MapPin, Camera, Users, Sparkles, ArrowRight, Loader, AlertCircle } from 'lucide-react'
 import type { Location, PresenceProfile } from '@/lib/types'
-import { getCurrentCoords, haversineMeters, GPS_GRACE_METERS } from '@/lib/geo'
+import { getCurrentCoords, haversineMeters, GPS_GRACE_METERS, GeoError } from '@/lib/geo'
+import { LocationHelp } from '@/components/join/LocationHelp'
 import { VibeBar } from './VibeBar'
 
 interface LockedPreviewProps {
@@ -20,7 +21,7 @@ const REQUIREMENTS = [
   { icon: Camera,   label: 'Take a live selfie',             color: 'text-wia-pink' },
 ]
 
-type GpsState = 'idle' | 'checking' | 'too_far' | 'error'
+type GpsState = 'idle' | 'checking' | 'too_far' | 'denied' | 'error'
 
 export function LockedPreview({ location, presence, isKnownUser }: LockedPreviewProps) {
   const router = useRouter()
@@ -38,8 +39,9 @@ export function LockedPreview({ location, presence, isKnownUser }: LockedPreview
         return
       }
       router.push(`/${location.slug}/join`)
-    } catch {
-      setGps('error')
+    } catch (e) {
+      if (e instanceof GeoError && e.kind === 'denied') setGps('denied')
+      else setGps('error')
     }
   }
 
@@ -127,6 +129,11 @@ export function LockedPreview({ location, presence, isKnownUser }: LockedPreview
               <span>You&apos;re about <strong>{Math.round(distance ?? 0)}m</strong> away. Get closer to <strong>{location.name}</strong> and try again.</span>
             </div>
           )}
+          {gps === 'denied' && (
+            <div className="max-w-sm mx-auto">
+              <LocationHelp onRetry={handleJoin} checking={false} />
+            </div>
+          )}
           {gps === 'error' && (
             <div className="flex items-start gap-2 px-4 py-3 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm max-w-sm mx-auto text-left">
               <AlertCircle size={16} className="shrink-0 mt-0.5" />
@@ -144,7 +151,7 @@ export function LockedPreview({ location, presence, isKnownUser }: LockedPreview
               >
                 {gps === 'checking' ? (
                   <><Loader size={18} className="animate-spin" /> Checking your location…</>
-                ) : gps === 'too_far' || gps === 'error' ? (
+                ) : gps === 'too_far' || gps === 'error' || gps === 'denied' ? (
                   <><MapPin size={18} /> Try again</>
                 ) : (
                   <>Join the room <ArrowRight size={16} /></>
