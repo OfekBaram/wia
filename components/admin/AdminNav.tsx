@@ -3,8 +3,8 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Plus, LogOut, BarChart2 } from 'lucide-react'
-import { useAuth } from '@/lib/hooks/useAuth'
-import { signOut, isSuperAdmin } from '@/lib/auth'
+import { useAdminRole } from '@/lib/hooks/useAdminRole'
+import { signOut } from '@/lib/auth'
 
 const BASE_LINKS = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -12,8 +12,8 @@ const BASE_LINKS = [
 
 export function AdminNav() {
   const pathname = usePathname()
-  const { user } = useAuth()
-  const superAdmin = isSuperAdmin(user)
+  const { me } = useAdminRole()
+  const superAdmin = me?.role === 'super_admin'
 
   const links = [
     ...BASE_LINKS,
@@ -56,10 +56,10 @@ export function AdminNav() {
           >
             View public site →
           </Link>
-          {user && (
+          {me && (
             <div className="flex items-center gap-2 pl-3 border-l border-wia-ink/10">
               <div className="text-right hidden sm:block">
-                <div className="text-xs font-medium text-wia-ink truncate max-w-[160px]">{user.email}</div>
+                <div className="text-xs font-medium text-wia-ink truncate max-w-[160px]">{me.email}</div>
                 <div className="text-[10px] uppercase tracking-wider text-wia-purple">{superAdmin ? 'Admin' : 'Venue owner'}</div>
               </div>
               <button

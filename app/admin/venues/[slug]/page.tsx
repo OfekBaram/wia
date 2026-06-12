@@ -12,7 +12,6 @@ import type { Location } from '@/lib/types'
 import { GlassCard } from '@/components/ui/GlassCard'
 import { LiveBadge } from '@/components/ui/LiveBadge'
 import { QRCodePoster } from '@/components/admin/QRCodePoster'
-import { useAuth } from '@/lib/hooks/useAuth'
 
 interface Props { params: Promise<{ slug: string }> }
 
@@ -22,7 +21,6 @@ export default function AdminVenuePage({ params }: Props) {
   const searchParams = useSearchParams()
   const justCreated = searchParams.get('created') === '1'
   const tabParam    = searchParams.get('tab')
-  const { user } = useAuth()
 
   const [venue,        setVenue]        = useState<(Location & { scanSecret: string; ownerId: string | null; imageUrl: string | null }) | null>(null)
   const [liveCount,    setLiveCount]    = useState(0)

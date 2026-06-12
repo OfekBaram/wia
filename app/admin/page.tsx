@@ -7,7 +7,7 @@ import { VENUE_EMOJI } from '@/lib/mock-data'
 import type { Location } from '@/lib/types'
 import { LiveBadge } from '@/components/ui/LiveBadge'
 import { GlassCard } from '@/components/ui/GlassCard'
-import { useAuth } from '@/lib/hooks/useAuth'
+import { useAdminRole } from '@/lib/hooks/useAdminRole'
 
 interface VenueRow {
   id:           string
@@ -84,9 +84,7 @@ function Row({ venue, onDelete }: { venue: VenueRow; onDelete?: (slug: string) =
 }
 
 export default function AdminDashboard() {
-  const { user, ready } = useAuth()
-  const isSuperAdmin = user?.role === 'super_admin'
-  const isVenueOwner = user?.role === 'venue_owner'
+  const { isSuperAdmin, isVenueOwner } = useAdminRole()
 
   const [venues,  setVenues]  = useState<VenueRow[]>([])
   const [loading, setLoading] = useState(true)

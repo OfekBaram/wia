@@ -5,8 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft, ExternalLink } from 'lucide-react'
 import { VENUE_EMOJI } from '@/lib/mock-data'
 import { GlassCard } from '@/components/ui/GlassCard'
-import { useAuth } from '@/lib/hooks/useAuth'
-import { isSuperAdmin } from '@/lib/auth'
+import { useAdminRole } from '@/lib/hooks/useAdminRole'
 
 interface VenueRow {
   id:            string
@@ -22,7 +21,7 @@ interface VenueRow {
 }
 
 export default function AnalyticsDashboard() {
-  const { user, ready } = useAuth()
+  const { isSuperAdmin, ready } = useAdminRole()
   const [venues,  setVenues]  = useState<VenueRow[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -34,7 +33,7 @@ export default function AnalyticsDashboard() {
   }, [])
 
   if (!ready) return null
-  if (!isSuperAdmin(user)) {
+  if (!isSuperAdmin) {
     return (
       <div className="max-w-2xl mx-auto text-center py-20">
         <p className="text-wia-ink/50">Super admin access required.</p>
