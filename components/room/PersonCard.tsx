@@ -15,7 +15,6 @@ interface PersonCardProps {
   likedMe?:         boolean
   likesRemaining?:  number
   onLike?:          () => void
-  onUnlike?:        () => void
   onOpenChat?:      () => void
   onClick?:         () => void
 }
@@ -29,7 +28,7 @@ const GENDER_ICON: Record<string, string> = {
 
 export function PersonCard({
   person, isCurrentUser, iLiked, likedMe, likesRemaining = 5,
-  onLike, onUnlike, onOpenChat, onClick,
+  onLike, onOpenChat, onClick,
 }: PersonCardProps) {
   const [pending,        setPending]        = useState(false)
   const [optimisticLike, setOptimisticLike] = useState<boolean | null>(null)
@@ -39,15 +38,13 @@ export function PersonCard({
   const timeHere = formatDistanceToNow(new Date(person.arrivedAt), { addSuffix: false })
 
   async function handleHeart() {
-    if (isCurrentUser || pending) return
+    if (isCurrentUser || pending || effectiveLiked) return // likes are permanent
     setPending(true)
-    const wasLiked = effectiveLiked
-    setOptimisticLike(!wasLiked)
+    setOptimisticLike(true)
     try {
-      if (wasLiked) await onUnlike?.()
-      else          await onLike?.()
+      await onLike?.()
     } catch {
-      setOptimisticLike(wasLiked ?? false) // revert on error
+      setOptimisticLike(false) // revert on error
     } finally {
       setOptimisticLike(null) // let parent state take over
       setPending(false)
@@ -135,7 +132,7 @@ export function PersonCard({
             {/* Heart button */}
             <button
               onClick={(e) => { e.stopPropagation(); handleHeart() }}
-              disabled={pending || (!effectiveLiked && likesRemaining <= 0)}
+              disabled={pending || effectiveLiked || (!effectiveLiked && likesRemaining <= 0)}
               className={cn(
                 'w-9 h-9 rounded-full flex items-center justify-center transition-all',
                 effectiveLiked
@@ -145,7 +142,7 @@ export function PersonCard({
                     : 'bg-white/90 text-wia-pink hover:scale-110 shadow-lg',
               )}
               title={
-                effectiveLiked ? 'Tap to unlike'
+                effectiveLiked ? 'Liked'
                 : likesRemaining <= 0 ? 'No likes left in this room'
                 : 'Send a like'
               }

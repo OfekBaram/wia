@@ -47,7 +47,7 @@ export async function POST(req: Request) {
         { status: 403 },
       )
     }
-    if (!body.name || !body.age || !body.gender || !body.statusText || !body.venueSlug) {
+    if (!body.name || !body.age || !body.gender || !body.venueSlug) {
       return NextResponse.json({ error: 'Missing required profile fields' }, { status: 400 })
     }
     if (!body.selfieDataUrl?.startsWith('data:image/')) {
@@ -149,7 +149,7 @@ export async function POST(req: Request) {
       name:        body.name,
       age:         body.age,
       gender:      body.gender,
-      status_text: body.statusText,
+      status_text: body.statusText?.trim() || '',
       selfie_url:  selfieUrl,
       expires_at:  expiresAt,
       left_at:     null,

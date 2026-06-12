@@ -69,7 +69,7 @@ export function StepProfile({ selfieUrl, existingMaster, onComplete }: StepProfi
   const isValid =
     name.trim().length >= 2 &&
     age >= MIN_AGE && age <= MAX_AGE &&
-    wordCount >= 1 && wordCount <= MAX_WORDS &&
+    wordCount <= MAX_WORDS &&
     (!isFirstTime || isValidEmail(email))
 
   function submit() {
@@ -201,7 +201,7 @@ export function StepProfile({ selfieUrl, existingMaster, onComplete }: StepProfi
       <div>
         <div className="flex items-center justify-between mb-2">
           <label className="block text-sm font-medium text-wia-ink/60">
-            What are you up to here?
+            What are you up to here? <span className="text-wia-ink/40">(optional)</span>
           </label>
           <span
             className={cn(

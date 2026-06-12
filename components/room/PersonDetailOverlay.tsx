@@ -13,7 +13,6 @@ interface PersonDetailOverlayProps {
   likedMe?:        boolean
   likesRemaining?: number
   onLike?:         () => void
-  onUnlike?:       () => void
   onOpenChat?:     () => void
   onClose:         () => void
 }
@@ -24,14 +23,14 @@ const GENDER_LABEL: Record<string, string> = {
 
 export function PersonDetailOverlay({
   person, isCurrentUser, iLiked, likedMe, likesRemaining = 5,
-  onLike, onUnlike, onOpenChat, onClose,
+  onLike, onOpenChat, onClose,
 }: PersonDetailOverlayProps) {
   const isMatch  = iLiked && likedMe
   const timeHere = formatDistanceToNow(new Date(person.arrivedAt), { addSuffix: false })
 
   function handleHeart() {
-    if (iLiked) onUnlike?.()
-    else        onLike?.()
+    if (iLiked) return // likes are permanent
+    onLike?.()
   }
 
   return (
@@ -103,7 +102,7 @@ export function PersonDetailOverlay({
             {/* Like / unlike */}
             <button
               onClick={handleHeart}
-              disabled={!iLiked && likesRemaining <= 0}
+              disabled={iLiked || likesRemaining <= 0}
               className={cn(
                 'flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-semibold text-sm transition-all',
                 iLiked

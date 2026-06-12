@@ -155,24 +155,6 @@ export function PresenceGrid({
     }
   }
 
-  async function handleUnlike(toUserId: string) {
-    if (busy.has(toUserId)) return
-    const person = presence.find(p => p.userId === toUserId)
-    showToast(`💔 Unliked ${person?.name ?? 'them'}`)
-    setBusy(prev => new Set(prev).add(toUserId))
-    try {
-      await fetch('/api/likes', {
-        method:      'DELETE',
-        headers:     { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body:        JSON.stringify({ venueSlug, toUserId }),
-      })
-      onLikesChanged()
-    } finally {
-      setBusy(prev => { const n = new Set(prev); n.delete(toUserId); return n })
-    }
-  }
-
   const displayed = useMemo(() => {
     let list = [...presence]
     if (filter === 'matches')  list = list.filter(p => likesSent.has(p.userId) && likesReceived.has(p.userId))
@@ -275,7 +257,6 @@ export function PresenceGrid({
             likedMe={likesReceived.has(person.userId)}
             likesRemaining={likesRemaining}
             onLike={()    => handleLike(person.userId)}
-            onUnlike={()  => handleUnlike(person.userId)}
             onOpenChat={() => openChat(person)}
             onClick={() => setSelectedPerson(person)}
           />
@@ -315,7 +296,6 @@ export function PresenceGrid({
           likedMe={likesReceived.has(selectedPerson.userId)}
           likesRemaining={likesRemaining}
           onLike={() => handleLike(selectedPerson.userId)}
-          onUnlike={() => handleUnlike(selectedPerson.userId)}
           onOpenChat={() => openChat(selectedPerson)}
           onClose={() => setSelectedPerson(null)}
         />

@@ -2,7 +2,7 @@
 // authed user, but bypasses the broken browser SDK that was hanging the form.
 //
 // POST   { venueSlug, toUserId }  → insert (returns 200 / 409 already-liked / 403 limit)
-// DELETE { venueSlug, toUserId }  → remove
+// Likes are permanent — no unlike.
 //
 // The 5-like-per-room cap is enforced by the DB trigger; we surface its error.
 
@@ -63,16 +63,4 @@ export async function POST(req: Request) {
   return NextResponse.json({ ok: true, isMatch: !!reverse })
 }
 
-export async function DELETE(req: Request) {
-  const r = await resolve(req)
-  if ('error' in r) return r.error
-  const { fromUserId, toUserId, venueId, admin } = r
-
-  const { error } = await admin.from('likes').delete()
-    .eq('venue_id', venueId)
-    .eq('from_user_id', fromUserId)
-    .eq('to_user_id', toUserId)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  return NextResponse.json({ ok: true })
-}
+// Likes are permanent by design — there is intentionally no DELETE handler.
