@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Shield, Mail, Lock, ArrowRight, AlertCircle, Building2, Sparkles } from 'lucide-react'
@@ -16,6 +16,19 @@ export default function AdminLoginPage() {
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [error,           setError]           = useState<string | null>(null)
   const [loading,         setLoading]         = useState(false)
+
+  // Already signed in with an admin role? Skip the form entirely.
+  // Server-side check — never the browser SDK (it hangs once the cookie is set).
+  useEffect(() => {
+    fetch('/api/admin/me', { credentials: 'include', cache: 'no-store' })
+      .then(r => (r.ok ? r.json() : null))
+      .then(me => {
+        if (me && (me.role === 'super_admin' || me.role === 'venue_owner')) {
+          window.location.assign('/admin')
+        }
+      })
+      .catch(() => { /* not signed in — show the form */ })
+  }, [])
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault()
