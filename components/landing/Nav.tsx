@@ -18,7 +18,7 @@ export function Nav() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
             <span className="text-xl font-display font-bold tracking-tight gradient-text">WIA</span>
-            <span className="text-wia-ink/55 text-sm hidden sm:inline">who is around</span>
+            <span className="text-wia-ink/55 text-sm">who is around</span>
           </Link>
 
           {/* Desktop nav */}
