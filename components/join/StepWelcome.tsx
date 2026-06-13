@@ -52,8 +52,12 @@ type GpsState =
 export function StepWelcome({ location, liveCount, onContinue, isReturning }: StepWelcomeProps) {
   const emoji = VENUE_EMOJI[location.category]
   const [gps, setGps] = useState<GpsState>({ status: 'idle' })
+  // Which CTA the user tapped — so the result/error renders next to it, not
+  // buried below the benefit cards.
+  const [anchor, setAnchor] = useState<'top' | 'bottom'>('top')
 
-  async function handleContinue() {
+  async function handleContinue(source: 'top' | 'bottom' = 'top') {
+    setAnchor(source)
     setGps({ status: 'checking' })
     try {
       const here = await getCurrentCoords()
@@ -74,9 +78,9 @@ export function StepWelcome({ location, liveCount, onContinue, isReturning }: St
   const checking = gps.status === 'checking'
   const isRetry  = gps.status === 'too_far' || gps.status === 'error' || gps.status === 'denied'
 
-  const cta = (
+  const renderCta = (source: 'top' | 'bottom') => (
     <button
-      onClick={handleContinue}
+      onClick={() => handleContinue(source)}
       disabled={checking}
       className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-gradient-to-r from-wia-purple to-wia-pink text-white font-semibold text-base hover:opacity-90 active:scale-[0.99] transition-all shadow-xl shadow-purple-500/30 disabled:opacity-70"
     >
@@ -97,6 +101,41 @@ export function StepWelcome({ location, liveCount, onContinue, isReturning }: St
         </>
       )}
     </button>
+  )
+
+  // Result/error block — light-theme colors so it's actually legible.
+  const statusBlock = (
+    <>
+      {gps.status === 'too_far' && (
+        <div className="rounded-2xl p-4 border border-amber-400 bg-amber-50">
+          <div className="flex items-start gap-2.5">
+            <AlertCircle size={18} className="shrink-0 mt-0.5 text-amber-600" />
+            <div>
+              <div className="text-sm font-semibold text-amber-800">
+                You&apos;re too far from {location.name}
+              </div>
+              <div className="text-xs text-amber-700 mt-0.5 leading-relaxed">
+                You&apos;re about <strong>{Math.round(gps.distance)}m</strong> away. The room is only joinable within {location.radiusMeters}m of the venue. Walk closer and try again.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {gps.status === 'denied' && (
+        <LocationHelp onRetry={() => handleContinue(anchor)} checking={checking} />
+      )}
+      {gps.status === 'error' && (
+        <div className="rounded-2xl p-4 border border-red-400 bg-red-50">
+          <div className="flex items-start gap-2.5">
+            <AlertCircle size={18} className="shrink-0 mt-0.5 text-red-600" />
+            <div>
+              <div className="text-sm font-semibold text-red-700">Location check failed</div>
+              <div className="text-xs text-red-600 mt-0.5 leading-relaxed">{gps.message}</div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 
   const locationNote = (
@@ -146,7 +185,8 @@ export function StepWelcome({ location, liveCount, onContinue, isReturning }: St
 
       {/* Primary CTA — above the fold, right under the headline */}
       <div className="space-y-3">
-        {cta}
+        {renderCta('top')}
+        {anchor === 'top' && statusBlock}
         {locationNote}
       </div>
 
@@ -173,39 +213,13 @@ export function StepWelcome({ location, liveCount, onContinue, isReturning }: St
         </div>
       )}
 
-      {/* GPS error states */}
-      {gps.status === 'too_far' && (
-        <div className="glass-strong rounded-2xl p-4 border border-amber-500/30 bg-amber-500/5 space-y-2">
-          <div className="flex items-start gap-2">
-            <AlertCircle size={16} className="shrink-0 mt-0.5 text-amber-300" />
-            <div>
-              <div className="text-sm font-semibold text-amber-200">
-                You&apos;re too far from {location.name}
-              </div>
-              <div className="text-xs text-amber-200/70 mt-0.5">
-                You&apos;re about <strong>{Math.round(gps.distance)}m</strong> away. The room is only joinable within {location.radiusMeters}m of the venue. Walk closer and try again.
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      {gps.status === 'denied' && (
-        <LocationHelp onRetry={handleContinue} checking={checking} />
-      )}
-      {gps.status === 'error' && (
-        <div className="glass-strong rounded-2xl p-4 border border-red-500/30 bg-red-500/5 space-y-2">
-          <div className="flex items-start gap-2">
-            <AlertCircle size={16} className="shrink-0 mt-0.5 text-red-300" />
-            <div>
-              <div className="text-sm font-semibold text-red-200">Location check failed</div>
-              <div className="text-xs text-red-200/70 mt-0.5">{gps.message}</div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Repeat CTA at the bottom — only when benefits separate it from the top one */}
-      {!isReturning && cta}
+      {!isReturning && (
+        <div className="space-y-3">
+          {renderCta('bottom')}
+          {anchor === 'bottom' && statusBlock}
+        </div>
+      )}
     </div>
   )
 }
