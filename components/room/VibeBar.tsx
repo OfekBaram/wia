@@ -50,17 +50,17 @@ export function VibeBar({ presence }: VibeBarProps) {
   ]
 
   return (
-    <div className="glass rounded-2xl px-4 sm:px-5 py-3 grid grid-cols-3 gap-2 sm:gap-4">
+    <div className="glass rounded-2xl px-3 sm:px-5 py-3 grid grid-cols-3 gap-2 sm:gap-4">
       {STATS.map((s) => (
-        <div key={s.label} className="flex items-center gap-3 min-w-0">
-          <div className={`shrink-0 w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center ${s.color}`}>
+        <div key={s.label} className="flex flex-col items-center text-center gap-1.5 sm:flex-row sm:items-center sm:text-left sm:gap-3 min-w-0">
+          <div className={`shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/5 flex items-center justify-center ${s.color}`}>
             <s.icon size={16} />
           </div>
-          <div className="min-w-0">
-            <div className="text-[10px] uppercase tracking-wider text-wia-ink/55">
+          <div className="min-w-0 w-full">
+            <div className="text-[10px] uppercase tracking-wider text-wia-ink/55 leading-tight">
               {s.label}
             </div>
-            <div className="font-display font-bold text-wia-ink text-base sm:text-lg leading-tight truncate">
+            <div className="font-display font-bold text-wia-ink text-sm sm:text-lg leading-tight truncate">
               {s.value}
             </div>
             <div className="text-[10px] text-wia-ink/60 truncate">{s.sub}</div>
