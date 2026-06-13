@@ -30,7 +30,9 @@ export function ChatPanel({ venueSlug, other, currentUserId, onClose }: ChatPane
   const [sending,  setSending]  = useState(false)
   const [error,    setError]    = useState<string | null>(null)
   const [ready,    setReady]    = useState(false)
+  const [partnerTyping, setPartnerTyping] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const lastTypingSent = useRef(0)
 
   const url = `/api/chat/${encodeURIComponent(venueSlug)}/${encodeURIComponent(other.userId)}`
 
@@ -40,9 +42,18 @@ export function ChatPanel({ venueSlug, other, currentUserId, onClose }: ChatPane
       if (!res.ok) return
       const json = await res.json()
       setMessages(json.messages ?? [])
+      setPartnerTyping(!!json.partnerTyping)
     } catch { /* ignore */ } finally {
       setReady(true)
     }
+  }, [url])
+
+  // Send a typing heartbeat, throttled to once per 2.5s while actively typing.
+  const pingTyping = useCallback(() => {
+    const now = Date.now()
+    if (now - lastTypingSent.current < 2500) return
+    lastTypingSent.current = now
+    fetch(url, { method: 'PUT', credentials: 'include' }).catch(() => { /* ignore */ })
   }, [url])
 
   useEffect(() => { load() }, [load])
@@ -55,7 +66,7 @@ export function ChatPanel({ venueSlug, other, currentUserId, onClose }: ChatPane
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
-  }, [messages])
+  }, [messages, partnerTyping])
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault()
@@ -140,6 +151,16 @@ export function ChatPanel({ venueSlug, other, currentUserId, onClose }: ChatPane
               </div>
             )
           })}
+
+          {partnerTyping && (
+            <div className="flex justify-start">
+              <div className="glass rounded-2xl rounded-bl-md px-3.5 py-3 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-wia-ink/40 animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-wia-ink/40 animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-wia-ink/40 animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            </div>
+          )}
         </div>
 
         <form onSubmit={handleSend} className="p-3 border-t border-wia-ink/10 space-y-2">
@@ -149,7 +170,7 @@ export function ChatPanel({ venueSlug, other, currentUserId, onClose }: ChatPane
           <div className="flex items-center gap-2">
             <input
               value={text}
-              onChange={(e) => setText(e.target.value)}
+              onChange={(e) => { setText(e.target.value); if (e.target.value.trim()) pingTyping() }}
               placeholder="Type a message..."
               maxLength={1000}
               disabled={sending}

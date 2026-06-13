@@ -42,7 +42,32 @@ export async function GET(_req: Request, params: RouteParams) {
     .limit(200)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ messages: data ?? [] })
+
+  // Is the other person currently typing to me? (heartbeat within last 6s)
+  const { data: typingRow } = await c.admin
+    .from('chat_typing')
+    .select('updated_at')
+    .eq('venue_id', c.venueId)
+    .eq('from_user_id', c.otherUserId)
+    .eq('to_user_id', c.me)
+    .maybeSingle()
+  const partnerTyping = !!typingRow && (Date.now() - new Date(typingRow.updated_at).getTime() < 6000)
+
+  return NextResponse.json({ messages: data ?? [], partnerTyping })
+}
+
+// Typing heartbeat — the client PUTs this every couple of seconds while the
+// user is actively typing. Upsert refreshes updated_at.
+export async function PUT(_req: Request, params: RouteParams) {
+  const c = await ctx(params)
+  if ('unauth' in c)   return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+  if ('notFound' in c) return NextResponse.json({ error: 'venue not found' }, { status: 404 })
+
+  await c.admin.from('chat_typing').upsert(
+    { venue_id: c.venueId, from_user_id: c.me, to_user_id: c.otherUserId, updated_at: new Date().toISOString() },
+    { onConflict: 'venue_id,from_user_id,to_user_id' },
+  )
+  return NextResponse.json({ ok: true })
 }
 
 export async function POST(req: Request, params: RouteParams) {
@@ -76,6 +101,11 @@ export async function POST(req: Request, params: RouteParams) {
     text:         trimmed,
   }).select('*').single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Sending ends the typing state — clear my heartbeat so the indicator drops
+  // immediately rather than lingering for the 6s window.
+  await c.admin.from('chat_typing').delete()
+    .eq('venue_id', c.venueId).eq('from_user_id', c.me).eq('to_user_id', c.otherUserId)
 
   // Notify the recipient — collapses to one notification per sender via tag
   const [{ data: venue }, { data: sender }] = await Promise.all([
