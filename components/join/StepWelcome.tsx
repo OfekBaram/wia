@@ -72,9 +72,42 @@ export function StepWelcome({ location, liveCount, onContinue, isReturning }: St
   }
 
   const checking = gps.status === 'checking'
+  const isRetry  = gps.status === 'too_far' || gps.status === 'error' || gps.status === 'denied'
+
+  const cta = (
+    <button
+      onClick={handleContinue}
+      disabled={checking}
+      className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-gradient-to-r from-wia-purple to-wia-pink text-white font-semibold text-base hover:opacity-90 active:scale-[0.99] transition-all shadow-xl shadow-purple-500/30 disabled:opacity-70"
+    >
+      {checking ? (
+        <>
+          <Loader size={18} className="animate-spin" />
+          Verifying your location...
+        </>
+      ) : isRetry ? (
+        <>
+          <MapPin size={18} />
+          Try again
+        </>
+      ) : (
+        <>
+          {isReturning ? 'Set up this visit' : 'Join the room'}
+          <ArrowRight size={18} />
+        </>
+      )}
+    </button>
+  )
+
+  const locationNote = (
+    <p className="text-center text-xs text-wia-ink/55 leading-relaxed max-w-sm mx-auto flex items-center justify-center gap-1">
+      <MapPin size={11} className="text-wia-purple/60" />
+      We&apos;ll ask for your location to verify you&apos;re actually at the venue.
+    </p>
+  )
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-6">
       <div className="text-center space-y-3">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass border border-emerald-500/30">
           <span className="relative flex h-1.5 w-1.5">
@@ -85,30 +118,43 @@ export function StepWelcome({ location, liveCount, onContinue, isReturning }: St
         </div>
 
         {location.coverImageUrl ? (
-          <div className="relative w-full h-36 rounded-2xl overflow-hidden -mx-0 mb-1">
+          <div className="relative w-full h-40 rounded-2xl overflow-hidden ring-1 ring-wia-ink/10 shadow-sm">
             <Image src={location.coverImageUrl} alt={location.name} fill className="object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/50" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/5 to-black/45" />
           </div>
         ) : (
-          <div className="inline-block text-5xl mb-1">{emoji}</div>
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-wia-purple/10 to-wia-pink/10 text-5xl">{emoji}</div>
         )}
 
-        <h1 className="font-display text-3xl sm:text-4xl font-bold text-wia-ink leading-tight">
+        <h1 className="font-display text-3xl sm:text-4xl font-bold text-wia-ink leading-tight pt-1">
           {isReturning ? 'Welcome back to ' : 'Welcome to '}
           <span className="gradient-text">{location.name}</span>
         </h1>
 
         {liveCount > 0 ? (
-          <p className="text-wia-ink/60">
-            <strong className="text-wia-ink">{liveCount} {liveCount === 1 ? 'person is' : 'people are'}</strong> here right now.
+          <p className="inline-flex items-center gap-2 text-wia-ink/60">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-wia-pink opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-wia-pink" />
+            </span>
+            <span><strong className="text-wia-ink">{liveCount} {liveCount === 1 ? 'person is' : 'people are'}</strong> here right now.</span>
           </p>
         ) : (
           <p className="text-wia-ink/50">Be the first one in the room.</p>
         )}
       </div>
 
+      {/* Primary CTA — above the fold, right under the headline */}
+      <div className="space-y-3">
+        {cta}
+        {locationNote}
+      </div>
+
       {!isReturning && (
-        <div className="space-y-3">
+        <div className="space-y-3 pt-1">
+          <div className="text-[11px] uppercase tracking-wider text-wia-ink/45 text-center">
+            How it works
+          </div>
           {BENEFITS.map((b, i) => (
             <div
               key={b.title}
@@ -158,34 +204,8 @@ export function StepWelcome({ location, liveCount, onContinue, isReturning }: St
         </div>
       )}
 
-      {/* CTA */}
-      <button
-        onClick={handleContinue}
-        disabled={checking}
-        className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-gradient-to-r from-wia-purple to-wia-pink text-white font-semibold text-base hover:opacity-90 transition-all shadow-xl shadow-purple-500/30 disabled:opacity-70"
-      >
-        {checking ? (
-          <>
-            <Loader size={18} className="animate-spin" />
-            Verifying your location...
-          </>
-        ) : gps.status === 'too_far' || gps.status === 'error' || gps.status === 'denied' ? (
-          <>
-            <MapPin size={18} />
-            Try again
-          </>
-        ) : (
-          <>
-            {isReturning ? 'Set up this visit' : 'Join the room'}
-            <ArrowRight size={18} />
-          </>
-        )}
-      </button>
-
-      <p className="text-center text-xs text-wia-ink/55 leading-relaxed max-w-sm mx-auto flex items-center justify-center gap-1">
-        <MapPin size={11} className="text-wia-purple/60" />
-        We&apos;ll ask for your location to verify you&apos;re actually at the venue.
-      </p>
+      {/* Repeat CTA at the bottom — only when benefits separate it from the top one */}
+      {!isReturning && cta}
     </div>
   )
 }
