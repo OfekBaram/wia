@@ -183,7 +183,7 @@ export const dict: Record<Locale, Tree> = {
       fAll: 'All', fMatches: 'Matches', fLikedMe: 'Likes you', fNew: 'Just arrived',
       fWomen: 'Women', fMen: 'Men', fNb: 'Non-binary',
       likesLeft: 'of {max} likes left in this room',
-      peopleLikeYouOne: '{count} person likes you', peopleLikeYouMany: '{count} people like you',
+      peopleLikeYouOne: 'One person likes you', peopleLikeYouMany: '{count} people like you',
       likedToast: '❤️ Liked {name}', reportedToast: '🚩 Reported and hid {name}', hiddenToast: '🙈 {name} hidden',
       likeFailed: 'Could not send the like', genericError: 'Something went wrong, try again',
       noFilterMatch: 'No one matches this filter right now.',
@@ -219,7 +219,7 @@ export const dict: Record<Locale, Tree> = {
     chatList: {
       title: 'Your chats',
       emptySub: 'No matches yet — send some likes to start chatting',
-      countOne: '{count} match in this room', countMany: '{count} matches in this room',
+      countOne: 'One match in this room', countMany: '{count} matches in this room',
       emptyTitle: 'No matches yet',
       emptyBody: 'Send a like to someone in the room. When they like you back, the chat unlocks here.',
     },
@@ -233,7 +233,7 @@ export const dict: Record<Locale, Tree> = {
     },
     locked: {
       reqScan: 'Scan the WIA QR at the venue', reqNear: 'Be physically within 50m', reqSelfie: 'Take a live selfie',
-      hereCountOne: '{count} person is', hereCountMany: '{count} people are', here: 'here.',
+      hereCountOne: 'One person is', hereCountMany: '{count} people are', here: 'here.',
       scanBody: "To see who's here, scan the WIA QR code on a table at {venue}. Presence is earned, not browsed.",
       live: '{count} live', justArrived: '{count} just arrived',
       toUnlock: 'To unlock this room',
