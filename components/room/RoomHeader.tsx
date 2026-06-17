@@ -6,6 +6,7 @@ import { MapPin, LogOut, QrCode } from 'lucide-react'
 import type { Location } from '@/lib/types'
 import { LiveBadge } from '@/components/ui/LiveBadge'
 import { VENUE_EMOJI } from '@/lib/mock-data'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 
 interface RoomHeaderProps {
   location: Location
@@ -14,10 +15,11 @@ interface RoomHeaderProps {
 }
 
 export function RoomHeader({ location, isMember, onLeave }: RoomHeaderProps) {
+  const { t } = useI18n()
   const emoji = VENUE_EMOJI[location.category]
 
   async function leave() {
-    if (!confirm(`Leave ${location.name}? You'll need to scan again to rejoin.`)) return
+    if (!confirm(t('roomHeader.leaveConfirm', { venue: location.name }))) return
     await fetch('/api/leave', {
       method: 'POST',
       credentials: 'include',
@@ -80,7 +82,7 @@ export function RoomHeader({ location, isMember, onLeave }: RoomHeaderProps) {
               className="shrink-0 flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl glass border border-wia-ink/15 text-wia-ink/60 text-sm font-medium hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 transition-all"
             >
               <LogOut size={14} />
-              <span className="hidden sm:inline">Leave</span>
+              <span className="hidden sm:inline">{t('roomHeader.leave')}</span>
             </button>
           ) : (
             <Link
@@ -88,7 +90,7 @@ export function RoomHeader({ location, isMember, onLeave }: RoomHeaderProps) {
               className="shrink-0 flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-wia-purple to-wia-pink text-white text-sm font-semibold hover:opacity-90 transition-all shadow-lg shadow-purple-500/20"
             >
               <QrCode size={14} />
-              Scan to join
+              {t('roomHeader.scanToJoin')}
             </Link>
           )}
         </div>

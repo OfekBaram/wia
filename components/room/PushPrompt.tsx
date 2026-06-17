@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Bell, X } from 'lucide-react'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 
 // Registers the service worker and subscribes the member to web push.
 // - If permission is already granted: subscribes silently on mount.
@@ -41,6 +42,7 @@ async function subscribe(): Promise<boolean> {
 }
 
 export function PushPrompt() {
+  const { t } = useI18n()
   const [show, setShow] = useState(false)
 
   useEffect(() => {
@@ -78,14 +80,14 @@ export function PushPrompt() {
         <Bell size={16} className="text-wia-purple" />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-semibold text-wia-ink">Don&apos;t miss a match</div>
-        <div className="text-[11px] text-wia-ink/55">Get notified when someone matches or messages you.</div>
+        <div className="text-sm font-semibold text-wia-ink">{t('push.title')}</div>
+        <div className="text-[11px] text-wia-ink/55">{t('push.body')}</div>
       </div>
       <button
         onClick={enable}
         className="shrink-0 px-3 py-1.5 rounded-xl bg-gradient-to-r from-wia-purple to-wia-pink text-white text-xs font-semibold hover:opacity-90 transition-all"
       >
-        Enable
+        {t('push.enable')}
       </button>
       <button onClick={dismiss} className="shrink-0 p-1 text-wia-ink/40 hover:text-wia-ink/70 transition-colors">
         <X size={14} />

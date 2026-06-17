@@ -3,8 +3,10 @@
 import Image from 'next/image'
 import { X, Heart, MessageCircle, Clock } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+import { he } from 'date-fns/locale'
 import type { PresenceProfile } from '@/lib/types'
 import { cn } from '@/lib/cn'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 
 interface PersonDetailOverlayProps {
   person:          PresenceProfile
@@ -17,16 +19,17 @@ interface PersonDetailOverlayProps {
   onClose:         () => void
 }
 
-const GENDER_LABEL: Record<string, string> = {
-  woman: 'Woman', man: 'Man', 'non-binary': 'Non-binary', unspecified: '',
+const GENDER_LABEL_KEY: Record<string, string> = {
+  woman: 'detail.gWoman', man: 'detail.gMan', 'non-binary': 'detail.gNonBinary', unspecified: '',
 }
 
 export function PersonDetailOverlay({
   person, isCurrentUser, iLiked, likedMe, likesRemaining = 5,
   onLike, onOpenChat, onClose,
 }: PersonDetailOverlayProps) {
+  const { t, locale } = useI18n()
   const isMatch  = iLiked && likedMe
-  const timeHere = formatDistanceToNow(new Date(person.arrivedAt), { addSuffix: false })
+  const timeHere = formatDistanceToNow(new Date(person.arrivedAt), { addSuffix: false, locale: locale === 'he' ? he : undefined })
 
   function handleHeart() {
     if (iLiked) return // likes are permanent
@@ -42,22 +45,22 @@ export function PersonDetailOverlay({
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/30 text-white hover:bg-black/50 transition-colors"
+          className="absolute top-4 end-4 z-10 p-2 rounded-full bg-black/30 text-white hover:bg-black/50 transition-colors"
         >
           <X size={16} />
         </button>
 
         {/* Match badge */}
         {isMatch && (
-          <div className="absolute top-4 left-4 z-10 px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-wia-pink to-wia-purple text-white flex items-center gap-1.5 shadow-lg">
+          <div className="absolute top-4 start-4 z-10 px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-wia-pink to-wia-purple text-white flex items-center gap-1.5 shadow-lg">
             <Heart size={11} fill="white" />
-            Match
+            {t('card.match')}
           </div>
         )}
         {likedMe && !isMatch && !isCurrentUser && (
-          <div className="absolute top-4 left-4 z-10 px-3 py-1 rounded-full text-xs font-bold bg-wia-pink/90 text-white flex items-center gap-1.5 animate-pulse">
+          <div className="absolute top-4 start-4 z-10 px-3 py-1 rounded-full text-xs font-bold bg-wia-pink/90 text-white flex items-center gap-1.5 animate-pulse">
             <Heart size={11} fill="white" />
-            Likes you
+            {t('card.likesYou')}
           </div>
         )}
 
@@ -74,20 +77,20 @@ export function PersonDetailOverlay({
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
           {/* Info overlay */}
-          <div className="absolute bottom-0 left-0 right-0 p-5 space-y-1">
+          <div className="absolute bottom-0 inset-x-0 p-5 space-y-1">
             <div className="flex items-end justify-between gap-3">
               <div>
                 <h2 className="font-display text-2xl font-bold text-white leading-tight">
                   {person.name}
-                  <span className="ml-2 text-white/70 text-lg font-normal">{person.age}</span>
+                  <span className="ms-2 text-white/70 text-lg font-normal">{person.age}</span>
                 </h2>
-                {GENDER_LABEL[person.gender] && (
-                  <p className="text-white/60 text-sm">{GENDER_LABEL[person.gender]}</p>
+                {GENDER_LABEL_KEY[person.gender] && (
+                  <p className="text-white/60 text-sm">{t(GENDER_LABEL_KEY[person.gender])}</p>
                 )}
               </div>
               <div className="flex items-center gap-1 text-white/60 text-xs shrink-0">
                 <Clock size={11} />
-                {timeHere} here
+                {t('card.here', { time: timeHere })}
               </div>
             </div>
             {person.statusText && (
@@ -113,7 +116,7 @@ export function PersonDetailOverlay({
               )}
             >
               <Heart size={16} fill={iLiked ? 'currentColor' : 'none'} />
-              {iLiked ? 'Liked' : likesRemaining <= 0 ? 'No likes left' : 'Like'}
+              {iLiked ? t('detail.liked') : likesRemaining <= 0 ? t('detail.noLikesLeft') : t('detail.like')}
             </button>
 
             {/* Chat — only on match */}
@@ -126,17 +129,17 @@ export function PersonDetailOverlay({
                   ? 'bg-white border border-wia-purple/30 text-wia-purple hover:bg-wia-purple/5'
                   : 'glass border border-wia-ink/15 text-wia-ink/40 cursor-not-allowed',
               )}
-              title={isMatch ? 'Open chat' : 'Like each other to unlock chat'}
+              title={isMatch ? t('detail.openChat') : t('detail.likeToUnlock')}
             >
               <MessageCircle size={16} />
-              {isMatch ? 'Message' : 'Chat locked'}
+              {isMatch ? t('detail.message') : t('detail.chatLocked')}
             </button>
           </div>
         )}
 
         {isCurrentUser && (
           <div className="px-5 pb-5 pt-2 text-center text-xs text-wia-ink/50">
-            This is how others see you in the room.
+            {t('detail.youHint')}
           </div>
         )}
       </div>

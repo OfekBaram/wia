@@ -8,6 +8,7 @@ import type { Location, PresenceProfile } from '@/lib/types'
 import { getCurrentCoords, haversineMeters, GPS_GRACE_METERS, GeoError } from '@/lib/geo'
 import { LocationHelp } from '@/components/join/LocationHelp'
 import { VibeBar } from './VibeBar'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 
 interface LockedPreviewProps {
   location:     Location
@@ -16,14 +17,15 @@ interface LockedPreviewProps {
 }
 
 const REQUIREMENTS = [
-  { icon: QrCode,   label: 'Scan the WIA QR at the venue',  color: 'text-wia-purple' },
-  { icon: MapPin,   label: 'Be physically within 50m',      color: 'text-wia-cyan' },
-  { icon: Camera,   label: 'Take a live selfie',             color: 'text-wia-pink' },
+  { icon: QrCode,   key: 'locked.reqScan',   color: 'text-wia-purple' },
+  { icon: MapPin,   key: 'locked.reqNear',   color: 'text-wia-cyan' },
+  { icon: Camera,   key: 'locked.reqSelfie', color: 'text-wia-pink' },
 ]
 
 type GpsState = 'idle' | 'checking' | 'too_far' | 'denied' | 'error'
 
 export function LockedPreview({ location, presence, isKnownUser }: LockedPreviewProps) {
+  const { t } = useI18n()
   const router = useRouter()
   const [gps,      setGps]      = useState<GpsState>('idle')
   const [distance, setDistance] = useState<number | null>(null)
@@ -79,11 +81,10 @@ export function LockedPreview({ location, presence, isKnownUser }: LockedPreview
           {/* Headline */}
           <div className="space-y-2">
             <h2 className="font-display text-3xl sm:text-4xl font-bold text-wia-ink">
-              <span className="gradient-text">{location.liveCount} {location.liveCount === 1 ? 'person is' : 'people are'}</span> here.
+              <span className="gradient-text">{location.liveCount === 1 ? t('locked.hereCountOne', { count: location.liveCount }) : t('locked.hereCountMany', { count: location.liveCount })}</span> {t('locked.here')}
             </h2>
             <p className="text-wia-ink/50 text-base sm:text-lg max-w-md mx-auto">
-              To see who&apos;s here, scan the WIA QR code on a table at{' '}
-              <strong className="text-wia-ink">{location.name}</strong>. Presence is earned, not browsed.
+              {(() => { const [pre, post] = t('locked.scanBody').split('{venue}'); return <>{pre}<strong className="text-wia-ink">{location.name}</strong>{post}</> })()}
             </p>
           </div>
 
@@ -91,12 +92,12 @@ export function LockedPreview({ location, presence, isKnownUser }: LockedPreview
           <div className="flex items-center justify-center gap-3 sm:gap-6 text-sm flex-wrap">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full glass">
               <Users size={14} className="text-wia-green" />
-              <span className="text-wia-ink/70">{location.liveCount} live</span>
+              <span className="text-wia-ink/70">{t('locked.live', { count: location.liveCount })}</span>
             </div>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full glass">
               <Sparkles size={14} className="text-wia-purple" />
               <span className="text-wia-ink/70">
-                {presence.filter(p => p.isNew).length} just arrived
+                {t('locked.justArrived', { count: presence.filter(p => p.isNew).length })}
               </span>
             </div>
           </div>
@@ -104,19 +105,19 @@ export function LockedPreview({ location, presence, isKnownUser }: LockedPreview
           {/* Requirements */}
           <div className="pt-4 space-y-3 max-w-sm mx-auto">
             <div className="text-xs uppercase tracking-wider text-wia-ink/55">
-              To unlock this room
+              {t('locked.toUnlock')}
             </div>
             <div className="space-y-2">
               {REQUIREMENTS.map((req, i) => (
                 <div
-                  key={req.label}
-                  className="flex items-center gap-3 glass rounded-xl px-4 py-2.5 text-left"
+                  key={req.key}
+                  className="flex items-center gap-3 glass rounded-xl px-4 py-2.5 text-start"
                 >
                   <div className={`w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center ${req.color}`}>
                     <req.icon size={14} />
                   </div>
-                  <span className="text-sm text-wia-ink/70">{req.label}</span>
-                  <span className="ml-auto text-[10px] text-wia-ink/55 font-mono">0{i + 1}</span>
+                  <span className="text-sm text-wia-ink/70">{t(req.key)}</span>
+                  <span className="ms-auto text-[10px] text-wia-ink/55 font-mono">0{i + 1}</span>
                 </div>
               ))}
             </div>
@@ -124,9 +125,9 @@ export function LockedPreview({ location, presence, isKnownUser }: LockedPreview
 
           {/* GPS error states */}
           {gps === 'too_far' && (
-            <div className="flex items-start gap-2 px-4 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-600 text-sm max-w-sm mx-auto text-left">
+            <div className="flex items-start gap-2 px-4 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-600 text-sm max-w-sm mx-auto text-start">
               <AlertCircle size={16} className="shrink-0 mt-0.5" />
-              <span>You&apos;re about <strong>{Math.round(distance ?? 0)}m</strong> away. Get closer to <strong>{location.name}</strong> and try again.</span>
+              <span>{t('locked.tooFar', { dist: Math.round(distance ?? 0), venue: location.name })}</span>
             </div>
           )}
           {gps === 'denied' && (
@@ -135,9 +136,9 @@ export function LockedPreview({ location, presence, isKnownUser }: LockedPreview
             </div>
           )}
           {gps === 'error' && (
-            <div className="flex items-start gap-2 px-4 py-3 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm max-w-sm mx-auto text-left">
+            <div className="flex items-start gap-2 px-4 py-3 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm max-w-sm mx-auto text-start">
               <AlertCircle size={16} className="shrink-0 mt-0.5" />
-              <span>Could not read your location. Make sure location access is allowed.</span>
+              <span>{t('locked.error')}</span>
             </div>
           )}
 
@@ -150,15 +151,15 @@ export function LockedPreview({ location, presence, isKnownUser }: LockedPreview
                 className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-gradient-to-r from-wia-purple to-wia-pink text-white font-semibold hover:opacity-90 disabled:opacity-70 transition-all shadow-xl shadow-purple-500/30"
               >
                 {gps === 'checking' ? (
-                  <><Loader size={18} className="animate-spin" /> Checking your location…</>
+                  <><Loader size={18} className="animate-spin" /> {t('locked.checking')}</>
                 ) : gps === 'too_far' || gps === 'error' || gps === 'denied' ? (
-                  <><MapPin size={18} /> Try again</>
+                  <><MapPin size={18} /> {t('locked.tryAgain')}</>
                 ) : (
-                  <>Join the room <ArrowRight size={16} /></>
+                  <>{t('locked.joinRoom')} <ArrowRight size={16} className="rtl-mirror" /></>
                 )}
               </button>
               <p className="text-xs text-wia-ink/55">
-                We&apos;ll verify you&apos;re at the venue via GPS.
+                {t('locked.verifyNote')}
               </p>
             </div>
           ) : (
@@ -168,11 +169,11 @@ export function LockedPreview({ location, presence, isKnownUser }: LockedPreview
                 className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-gradient-to-r from-wia-purple to-wia-pink text-white font-semibold hover:opacity-90 transition-all shadow-xl shadow-purple-500/30"
               >
                 <QrCode size={18} />
-                Open scanner
-                <ArrowRight size={16} />
+                {t('locked.openScanner')}
+                <ArrowRight size={16} className="rtl-mirror" />
               </Link>
               <p className="text-xs text-wia-ink/55 max-w-xs mx-auto">
-                Already at the venue? Look for the WIA QR code on tables or at the entrance.
+                {t('locked.scanHint')}
               </p>
             </div>
           )}
@@ -191,13 +192,13 @@ export function LockedPreview({ location, presence, isKnownUser }: LockedPreview
               style={{ backgroundImage: `url(${p.selfieUrl})` }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-wia-bg/80 via-wia-bg/40 to-transparent" />
-            <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
+            <div className="absolute bottom-2 inset-x-2 flex items-center justify-between">
               <div className="flex items-center gap-1">
                 <span className="relative flex h-1.5 w-1.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
                 </span>
-                <span className="text-[9px] text-wia-ink/60">live</span>
+                <span className="text-[9px] text-wia-ink/60">{t('locked.liveLabel')}</span>
               </div>
               <span className="text-[10px] font-semibold text-wia-ink/60">{p.age}</span>
             </div>

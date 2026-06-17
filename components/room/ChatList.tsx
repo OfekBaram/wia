@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import { X, Heart, MessageCircle, Sparkles } from 'lucide-react'
 import type { PresenceProfile } from '@/lib/types'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 
 interface ChatListProps {
   matches:  PresenceProfile[]    // people the current user has a mutual like with
@@ -15,6 +16,7 @@ interface ChatListProps {
  * Tapping a row opens the chat with that person.
  */
 export function ChatList({ matches, onPick, onClose }: ChatListProps) {
+  const { t } = useI18n()
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm">
       <div className="w-full sm:max-w-md glass-strong rounded-t-3xl sm:rounded-3xl border border-wia-ink/15 max-h-[80vh] flex flex-col overflow-hidden shadow-2xl">
@@ -24,11 +26,11 @@ export function ChatList({ matches, onPick, onClose }: ChatListProps) {
             <Heart size={16} fill="white" strokeWidth={0} className="text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-display font-semibold text-wia-ink text-base leading-tight">Your chats</div>
+            <div className="font-display font-semibold text-wia-ink text-base leading-tight">{t('chatList.title')}</div>
             <div className="text-[11px] text-wia-ink/60">
               {matches.length === 0
-                ? 'No matches yet — send some likes to start chatting'
-                : `${matches.length} ${matches.length === 1 ? 'match' : 'matches'} in this room`}
+                ? t('chatList.emptySub')
+                : matches.length === 1 ? t('chatList.countOne', { count: matches.length }) : t('chatList.countMany', { count: matches.length })}
             </div>
           </div>
           <button
@@ -47,9 +49,9 @@ export function ChatList({ matches, onPick, onClose }: ChatListProps) {
                 <Sparkles size={20} className="text-wia-purple" />
               </div>
               <div>
-                <div className="font-semibold text-wia-ink text-sm">No matches yet</div>
+                <div className="font-semibold text-wia-ink text-sm">{t('chatList.emptyTitle')}</div>
                 <div className="text-xs text-wia-ink/60 mt-1 max-w-xs mx-auto leading-relaxed">
-                  Send a like to someone in the room. When they like you back, the chat unlocks here.
+                  {t('chatList.emptyBody')}
                 </div>
               </div>
             </div>
@@ -59,7 +61,7 @@ export function ChatList({ matches, onPick, onClose }: ChatListProps) {
                 <li key={m.id}>
                   <button
                     onClick={() => onPick(m)}
-                    className="w-full flex items-center gap-3 px-5 py-3 hover:bg-white/5 active:bg-white/10 transition-colors text-left"
+                    className="w-full flex items-center gap-3 px-5 py-3 hover:bg-white/5 active:bg-white/10 transition-colors text-start"
                   >
                     <div className="relative shrink-0">
                       <Image

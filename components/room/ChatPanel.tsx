@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import Image from 'next/image'
 import { X, Send, Heart } from 'lucide-react'
 import type { PresenceProfile } from '@/lib/types'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 
 interface ChatPanelProps {
   venueSlug:      string
@@ -25,6 +26,7 @@ interface ChatMessage {
 const POLL_MS = 2500
 
 export function ChatPanel({ venueSlug, other, currentUserId, onClose }: ChatPanelProps) {
+  const { t } = useI18n()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [text,     setText]     = useState('')
   const [sending,  setSending]  = useState(false)
@@ -82,7 +84,7 @@ export function ChatPanel({ venueSlug, other, currentUserId, onClose }: ChatPane
       })
       if (!res.ok) {
         const j = await res.json().catch(() => ({} as { error?: string }))
-        setError(j.error ?? 'Could not send')
+        setError(j.error ?? t('chat.couldNotSend'))
         return
       }
       setText('')
@@ -108,7 +110,7 @@ export function ChatPanel({ venueSlug, other, currentUserId, onClose }: ChatPane
               <span className="font-semibold text-wia-ink text-sm truncate">{other.name}</span>
               <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-gradient-to-r from-wia-pink to-wia-purple text-white">
                 <Heart size={8} fill="white" />
-                match
+                {t('chat.match')}
               </span>
             </div>
             <div className="text-[10px] text-wia-ink/60 truncate">{other.statusText}</div>
@@ -129,7 +131,7 @@ export function ChatPanel({ venueSlug, other, currentUserId, onClose }: ChatPane
           )}
           {ready && messages.length === 0 && (
             <div className="text-center py-12 text-sm text-wia-ink/55">
-              You matched! Say hi 👋
+              {t('chat.sayHi')}
             </div>
           )}
           {messages.map((m) => {
@@ -171,7 +173,7 @@ export function ChatPanel({ venueSlug, other, currentUserId, onClose }: ChatPane
             <input
               value={text}
               onChange={(e) => { setText(e.target.value); if (e.target.value.trim()) pingTyping() }}
-              placeholder="Type a message..."
+              placeholder={t('chat.placeholder')}
               maxLength={1000}
               disabled={sending}
               className="flex-1 glass rounded-xl px-4 py-2.5 text-wia-ink placeholder:text-wia-ink/55 outline-none focus:ring-1 focus:ring-wia-purple/50 text-base sm:text-sm"

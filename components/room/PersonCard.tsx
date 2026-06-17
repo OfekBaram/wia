@@ -4,9 +4,11 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { Heart, MessageCircle, MoreVertical, EyeOff, Flag } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+import { he } from 'date-fns/locale'
 import type { PresenceProfile } from '@/lib/types'
 import { LiveDot } from '@/components/ui/LiveBadge'
 import { cn } from '@/lib/cn'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 
 interface PersonCardProps {
   person:           PresenceProfile
@@ -32,13 +34,14 @@ export function PersonCard({
   person, isCurrentUser, iLiked, likedMe, likesRemaining = 5,
   onLike, onOpenChat, onClick, onHide, onReport,
 }: PersonCardProps) {
+  const { t, locale } = useI18n()
   const [pending,        setPending]        = useState(false)
   const [optimisticLike, setOptimisticLike] = useState<boolean | null>(null)
   const [menuOpen,       setMenuOpen]       = useState(false)
 
   const effectiveLiked = optimisticLike !== null ? optimisticLike : (iLiked ?? false)
   const isMatch  = effectiveLiked && likedMe
-  const timeHere = formatDistanceToNow(new Date(person.arrivedAt), { addSuffix: false })
+  const timeHere = formatDistanceToNow(new Date(person.arrivedAt), { addSuffix: false, locale: locale === 'he' ? he : undefined })
 
   async function handleHeart() {
     if (isCurrentUser || pending || effectiveLiked) return // likes are permanent
@@ -66,19 +69,19 @@ export function PersonCard({
     >
       {/* Match badge */}
       {isMatch && (
-        <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gradient-to-r from-wia-pink to-wia-purple text-white flex items-center gap-1">
+        <div className="absolute top-2 start-2 z-10 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gradient-to-r from-wia-pink to-wia-purple text-white flex items-center gap-1">
           <Heart size={10} fill="white" />
-          Match
+          {t('card.match')}
         </div>
       )}
       {!isMatch && person.isNew && !isCurrentUser && (
-        <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/90 text-white">
-          Just arrived
+        <div className="absolute top-2 start-2 z-10 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/90 text-white">
+          {t('card.justArrived')}
         </div>
       )}
       {isCurrentUser && (
-        <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-wia-purple/90 text-white">
-          You
+        <div className="absolute top-2 start-2 z-10 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-wia-purple/90 text-white">
+          {t('card.you')}
         </div>
       )}
 
@@ -96,11 +99,11 @@ export function PersonCard({
 
         {/* 3-dot menu — hide / report (not on own card) */}
         {!isCurrentUser && (onHide || onReport) && (
-          <div className="absolute top-2 right-2 z-20">
+          <div className="absolute top-2 end-2 z-20">
             <button
               onClick={(e) => { e.stopPropagation(); setMenuOpen(o => !o) }}
               className="w-7 h-7 rounded-full bg-black/35 text-white/90 hover:bg-black/55 flex items-center justify-center transition-colors"
-              title="More options"
+              title={t('card.moreOptions')}
             >
               <MoreVertical size={14} />
             </button>
@@ -111,20 +114,20 @@ export function PersonCard({
                   className="fixed inset-0 z-10"
                   onClick={(e) => { e.stopPropagation(); setMenuOpen(false) }}
                 />
-                <div className="absolute right-0 top-8 z-20 w-40 rounded-xl glass-strong border border-wia-ink/15 shadow-xl overflow-hidden">
+                <div className="absolute end-0 top-8 z-20 w-40 rounded-xl glass-strong border border-wia-ink/15 shadow-xl overflow-hidden text-start">
                   <button
                     onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onHide?.() }}
                     className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-wia-ink/80 hover:bg-wia-ink/5 transition-colors"
                   >
                     <EyeOff size={13} className="text-wia-ink/50" />
-                    Hide this person
+                    {t('card.hide')}
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onReport?.() }}
                     className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-red-500 hover:bg-red-500/5 transition-colors border-t border-wia-ink/10"
                   >
                     <Flag size={13} />
-                    Report
+                    {t('card.report')}
                   </button>
                 </div>
               </>
@@ -135,7 +138,7 @@ export function PersonCard({
         {/* Age + gender chip */}
         <div className={cn(
           'absolute top-2 px-2 py-0.5 rounded-full glass-strong text-[10px] font-medium text-wia-ink flex items-center gap-1',
-          !isCurrentUser && (onHide || onReport) ? 'right-11' : 'right-2',
+          !isCurrentUser && (onHide || onReport) ? 'end-11' : 'end-2',
         )}>
           <span className="text-wia-ink/60">{GENDER_ICON[person.gender]}</span>
           {person.age}
@@ -143,21 +146,21 @@ export function PersonCard({
 
         {/* Liked-me hint */}
         {likedMe && !isMatch && !isCurrentUser && (
-          <div className="absolute top-10 right-2 px-2 py-0.5 rounded-full bg-wia-pink/80 text-white text-[9px] font-semibold flex items-center gap-1 animate-pulse">
+          <div className="absolute top-10 end-2 px-2 py-0.5 rounded-full bg-wia-pink/80 text-white text-[9px] font-semibold flex items-center gap-1 animate-pulse">
             <Heart size={9} fill="white" />
-            Likes you
+            {t('card.likesYou')}
           </div>
         )}
 
         {/* Live indicator */}
-        <div className="absolute bottom-2 left-2 flex items-center gap-1.5">
+        <div className="absolute bottom-2 start-2 flex items-center gap-1.5">
           <LiveDot />
-          <span className="text-[11px] text-wia-ink/80">{timeHere} here</span>
+          <span className="text-[11px] text-wia-ink/80">{t('card.here', { time: timeHere })}</span>
         </div>
 
         {/* Bottom action bar — visible on hover/touch */}
         {!isCurrentUser && (
-          <div className="absolute bottom-2 right-2 flex items-center gap-1.5">
+          <div className="absolute bottom-2 end-2 flex items-center gap-1.5">
             {/* Chat button — enabled only on match */}
             <button
               onClick={(e) => { e.stopPropagation(); isMatch && onOpenChat?.() }}
@@ -168,7 +171,7 @@ export function PersonCard({
                   ? 'bg-white text-wia-purple hover:scale-110 shadow-lg'
                   : 'bg-black/40 text-wia-ink/55 cursor-not-allowed',
               )}
-              title={isMatch ? 'Open chat' : 'Mutual like required to chat'}
+              title={isMatch ? t('card.openChat') : t('card.chatLocked')}
             >
               <MessageCircle size={16} />
             </button>
@@ -186,9 +189,9 @@ export function PersonCard({
                     : 'bg-white/90 text-wia-pink hover:scale-110 shadow-lg',
               )}
               title={
-                effectiveLiked ? 'Liked'
-                : likesRemaining <= 0 ? 'No likes left in this room'
-                : 'Send a like'
+                effectiveLiked ? t('card.liked')
+                : likesRemaining <= 0 ? t('card.noLikesLeft')
+                : t('card.sendLike')
               }
             >
               <Heart size={16} fill={effectiveLiked ? 'currentColor' : 'none'} />
