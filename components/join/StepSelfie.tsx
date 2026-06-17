@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import { Camera, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 
 interface StepSelfieProps {
   onCaptured: (dataUrl: string) => void
@@ -45,6 +46,7 @@ async function compressImage(file: File): Promise<string> {
 }
 
 export function StepSelfie({ onCaptured }: StepSelfieProps) {
+  const { t } = useI18n()
   const [state,     setState]     = useState<State>({ status: 'empty' })
   const fileInputRef              = useRef<HTMLInputElement>(null)
 
@@ -57,7 +59,7 @@ export function StepSelfie({ onCaptured }: StepSelfieProps) {
     e.target.value = '' // reset so picking the same file twice still fires
     if (!file) return
     if (!file.type.startsWith('image/')) {
-      setState({ status: 'error', message: 'That doesn\'t look like a photo. Try again.' })
+      setState({ status: 'error', message: t('selfie.notPhoto') })
       return
     }
     setState({ status: 'compressing' })
@@ -77,10 +79,10 @@ export function StepSelfie({ onCaptured }: StepSelfieProps) {
     <div className="text-center space-y-6">
       <div>
         <h2 className="font-display text-3xl font-bold text-wia-ink mb-3">
-          Take a live selfie
+          {t('selfie.title')}
         </h2>
         <p className="text-wia-ink/50 text-sm max-w-sm mx-auto">
-          This proves you&apos;re actually here. Real moments only — no gallery photos.
+          {t('selfie.sub')}
         </p>
       </div>
 
@@ -110,14 +112,14 @@ export function StepSelfie({ onCaptured }: StepSelfieProps) {
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-wia-purple to-wia-pink flex items-center justify-center shadow-xl shadow-purple-500/30">
               <Camera size={28} className="text-white" />
             </div>
-            <span className="text-sm font-medium">Tap to open camera</span>
+            <span className="text-sm font-medium">{t('selfie.tapOpen')}</span>
           </button>
         )}
 
         {state.status === 'compressing' && (
           <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-wia-ink/60">
             <div className="w-10 h-10 rounded-full border-2 border-wia-purple/30 border-t-wia-purple animate-spin" />
-            <span className="text-sm">Processing…</span>
+            <span className="text-sm">{t('selfie.processing')}</span>
           </div>
         )}
 
@@ -126,7 +128,7 @@ export function StepSelfie({ onCaptured }: StepSelfieProps) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={state.dataUrl}
-              alt="Your selfie"
+              alt={t('selfie.alt')}
               className="w-full h-full object-cover"
             />
             <div className="absolute top-3 right-3 z-20 w-8 h-8 rounded-full bg-emerald-500 border-2 border-wia-bg flex items-center justify-center">
@@ -142,7 +144,7 @@ export function StepSelfie({ onCaptured }: StepSelfieProps) {
           >
             <AlertCircle size={32} />
             <span className="text-sm text-center">{state.message}</span>
-            <span className="text-xs underline opacity-60">Tap to try again</span>
+            <span className="text-xs underline opacity-60">{t('selfie.tapRetry')}</span>
           </button>
         )}
       </div>
@@ -156,21 +158,21 @@ export function StepSelfie({ onCaptured }: StepSelfieProps) {
               className="flex items-center gap-2 px-5 py-3 rounded-xl glass text-wia-ink/60 hover:text-wia-ink transition-all text-sm"
             >
               <RefreshCw size={16} />
-              Retake
+              {t('selfie.retake')}
             </button>
             <button
               onClick={confirm}
               className="flex items-center gap-2 px-8 py-3 rounded-xl bg-gradient-to-r from-wia-purple to-wia-pink text-white font-semibold hover:opacity-90 transition-all shadow-lg shadow-purple-500/20"
             >
               <CheckCircle size={16} />
-              Use this photo
+              {t('selfie.usePhoto')}
             </button>
           </>
         )}
       </div>
 
       <p className="text-xs text-wia-ink/50 max-w-sm mx-auto">
-        Your selfie is only visible to people at this venue during your visit. It disappears when you leave.
+        {t('selfie.privacy')}
       </p>
     </div>
   )

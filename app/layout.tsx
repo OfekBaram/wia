@@ -37,7 +37,9 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    // dir/lang are set pre-hydration by NO_FLASH_LOCALE + the I18nProvider,
+    // so the server's "en"/ltr won't match — suppress the expected warning.
+    <html lang="en" dir="ltr" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: NO_FLASH_LOCALE }} />
       </head>
