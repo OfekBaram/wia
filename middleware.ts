@@ -7,9 +7,15 @@ import { createServerClient } from '@supabase/ssr'
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next({ request: { headers: request.headers } })
 
+  const url  = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  // Don't let a missing/misconfigured env var (e.g. on a preview deploy) take
+  // down every route — just skip the session refresh in that case.
+  if (!url || !anon) return response
+
   const sb = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    url,
+    anon,
     {
       cookies: {
         getAll() { return request.cookies.getAll() },
