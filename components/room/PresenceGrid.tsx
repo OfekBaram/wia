@@ -9,6 +9,7 @@ import { VibeBar } from './VibeBar'
 import { ChatPanel } from './ChatPanel'
 import { ChatLauncher } from './ChatLauncher'
 import { ChatList } from './ChatList'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 
 export const LIKE_LIMIT_PER_ROOM = 5
 
@@ -23,19 +24,19 @@ interface PresenceGridProps {
 }
 
 const SORT_OPTIONS = [
-  { value: 'newest', label: 'Just arrived' },
-  { value: 'random', label: 'Shuffle' },
+  { value: 'newest', labelKey: 'room.sortNewest' },
+  { value: 'random', labelKey: 'room.sortRandom' },
 ] as const
 type SortOption = (typeof SORT_OPTIONS)[number]['value']
 
 const FILTERS = [
-  { value: 'all',     label: 'All' },
-  { value: 'matches', label: 'Matches' },
-  { value: 'liked-me', label: 'Likes you' },
-  { value: 'new',     label: 'Just arrived' },
-  { value: 'woman',   label: 'Women' },
-  { value: 'man',     label: 'Men' },
-  { value: 'nb',      label: 'Non-binary' },
+  { value: 'all',     labelKey: 'room.fAll' },
+  { value: 'matches', labelKey: 'room.fMatches' },
+  { value: 'liked-me', labelKey: 'room.fLikedMe' },
+  { value: 'new',     labelKey: 'room.fNew' },
+  { value: 'woman',   labelKey: 'room.fWomen' },
+  { value: 'man',     labelKey: 'room.fMen' },
+  { value: 'nb',      labelKey: 'room.fNb' },
 ] as const
 type FilterValue = (typeof FILTERS)[number]['value']
 
@@ -43,6 +44,7 @@ export function PresenceGrid({
   presence, currentUserId, venueId, venueSlug,
   likesSent, likesReceived, onLikesChanged,
 }: PresenceGridProps) {
+  const { t } = useI18n()
   const [sort,    setSort]    = useState<SortOption>('newest')
   const [filter,  setFilter]  = useState<FilterValue>('all')
   const [chatWith,    setChatWith]    = useState<PresenceProfile | null>(null)
@@ -136,7 +138,7 @@ export function PresenceGrid({
   async function handleLike(toUserId: string) {
     if (busy.has(toUserId)) return
     const person = presence.find(p => p.userId === toUserId)
-    showToast(`❤️ Liked ${person?.name ?? 'them'}`)
+    showToast(t('room.likedToast', { name: person?.name ?? t('room.them') }))
     setBusy(prev => new Set(prev).add(toUserId))
     try {
       const res = await fetch('/api/likes', {
@@ -147,7 +149,7 @@ export function PresenceGrid({
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({} as { error?: string }))
-        showToast(err.error ?? 'Could not send the like')
+        showToast(err.error ?? t('room.likeFailed'))
       }
       onLikesChanged()
     } finally {
@@ -157,9 +159,9 @@ export function PresenceGrid({
 
   async function handleModeration(targetUserId: string, action: 'hide' | 'report') {
     const person = presence.find(p => p.userId === targetUserId)
-    const name = person?.name ?? 'this person'
-    if (action === 'report' && !window.confirm(`Report ${name}? They will also be hidden from your view.`)) return
-    if (action === 'hide' && !window.confirm(`Hide ${name} from your view for this visit?`)) return
+    const name = person?.name ?? t('room.them')
+    if (action === 'report' && !window.confirm(t('room.confirmReport', { name }))) return
+    if (action === 'hide' && !window.confirm(t('room.confirmHide', { name }))) return
     try {
       const res = await fetch('/api/moderation', {
         method:      'POST',
@@ -168,14 +170,14 @@ export function PresenceGrid({
         body:        JSON.stringify({ venueSlug, targetUserId, action }),
       })
       if (res.ok) {
-        showToast(action === 'report' ? `🚩 Reported and hid ${name}` : `🙈 ${name} hidden`)
+        showToast(action === 'report' ? t('room.reportedToast', { name }) : t('room.hiddenToast', { name }))
         setSelectedPerson(null)
         onLikesChanged() // re-fetch the room — server now filters them out
       } else {
-        showToast('Something went wrong, try again')
+        showToast(t('room.genericError'))
       }
     } catch {
-      showToast('Something went wrong, try again')
+      showToast(t('room.genericError'))
     }
   }
 
@@ -215,7 +217,7 @@ export function PresenceGrid({
       <div className="glass rounded-xl px-4 py-2.5 flex items-center justify-between text-sm">
         <div className="flex items-center gap-2 text-wia-ink/60">
           <Heart size={14} className="text-wia-pink" fill={likesRemaining < LIKE_LIMIT_PER_ROOM ? 'currentColor' : 'none'} />
-          <span><strong className="text-wia-ink">{likesRemaining}</strong> of {LIKE_LIMIT_PER_ROOM} likes left in this room</span>
+          <span><strong className="text-wia-ink">{likesRemaining}</strong> {t('room.likesLeft', { max: LIKE_LIMIT_PER_ROOM })}</span>
         </div>
         {likesReceived.size > 0 && (
           <div className="text-xs text-wia-pink flex items-center gap-1.5">
@@ -223,7 +225,7 @@ export function PresenceGrid({
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-wia-pink opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-wia-pink" />
             </span>
-            {likesReceived.size} {likesReceived.size === 1 ? 'person likes' : 'people like'} you
+            {likesReceived.size === 1 ? t('room.peopleLikeYouOne', { count: likesReceived.size }) : t('room.peopleLikeYouMany', { count: likesReceived.size })}
           </div>
         )}
       </div>
@@ -243,7 +245,7 @@ export function PresenceGrid({
                     : 'glass text-wia-ink/50 hover:text-wia-ink'
                 }`}
               >
-                {f.label}
+                {t(f.labelKey)}
                 {f.value === 'all' && ` (${presence.length})`}
               </button>
             ))}
@@ -251,7 +253,7 @@ export function PresenceGrid({
         </div>
 
         <div className="flex items-center justify-between sm:justify-end gap-2">
-          <span className="text-[10px] uppercase tracking-wider text-wia-ink/55 sm:hidden">Sort by</span>
+          <span className="text-[10px] uppercase tracking-wider text-wia-ink/55 sm:hidden">{t('room.sortBy')}</span>
           <div className="flex gap-1">
             {SORT_OPTIONS.map(opt => (
               <button
@@ -263,7 +265,7 @@ export function PresenceGrid({
                     : 'text-wia-ink/55 hover:text-wia-ink/60'
                 }`}
               >
-                {opt.label}
+                {t(opt.labelKey)}
               </button>
             ))}
           </div>
@@ -291,7 +293,7 @@ export function PresenceGrid({
 
       {displayed.length === 0 && (
         <div className="py-20 text-center text-wia-ink/55">
-          No one matches this filter right now.
+          {t('room.noFilterMatch')}
         </div>
       )}
 

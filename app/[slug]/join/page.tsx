@@ -11,6 +11,8 @@ import { StepWelcome } from '@/components/join/StepWelcome'
 import { StepSelfie } from '@/components/join/StepSelfie'
 import { StepProfile } from '@/components/join/StepProfile'
 import { cn } from '@/lib/cn'
+import { useI18n } from '@/lib/i18n/I18nProvider'
+import { LanguageSelector } from '@/components/LanguageSelector'
 
 import { supabase } from '@/lib/supabase/client'
 import { joinVenue } from '@/lib/api/presence'
@@ -34,10 +36,11 @@ interface Props {
 }
 
 function EnteringStep({ venueName, onAbort }: { venueName: string; onAbort: () => void }) {
+  const { t } = useI18n()
   const [showAbort, setShowAbort] = useState(false)
   useEffect(() => {
-    const t = setTimeout(() => setShowAbort(true), 12_000)
-    return () => clearTimeout(t)
+    const id = setTimeout(() => setShowAbort(true), 12_000)
+    return () => clearTimeout(id)
   }, [])
 
   return (
@@ -52,22 +55,22 @@ function EnteringStep({ venueName, onAbort }: { venueName: string; onAbort: () =
       </div>
       <div>
         <h2 className="font-display text-3xl font-bold gradient-text mb-3">
-          You&apos;re in.
+          {t('joinPage.youreIn')}
         </h2>
         <p className="text-wia-ink/50">
-          Entering <strong className="text-wia-ink">{venueName}</strong>...
+          {(() => { const [pre, post] = t('joinPage.entering').split('{venue}'); return <>{pre}<strong className="text-wia-ink">{venueName}</strong>{post}</> })()}
         </p>
       </div>
       {showAbort && (
         <div className="pt-4 border-t border-wia-ink/10 space-y-2">
-          <p className="text-xs text-amber-200/70">
-            Taking longer than usual. Stuck? Check the console for errors.
+          <p className="text-xs text-amber-600">
+            {t('joinPage.slowWarn')}
           </p>
           <button
             onClick={onAbort}
             className="text-xs text-wia-ink/60 underline hover:text-wia-ink"
           >
-            ← Back to the form
+            {t('joinPage.backToForm')}
           </button>
         </div>
       )}
@@ -75,13 +78,14 @@ function EnteringStep({ venueName, onAbort }: { venueName: string; onAbort: () =
   )
 }
 
-const STEPS: { key: JoinStep; icon: typeof Camera; label: string }[] = [
-  { key: 'welcome', icon: Sparkles, label: 'Welcome' },
-  { key: 'selfie',  icon: Camera,   label: 'Selfie' },
-  { key: 'profile', icon: User,     label: 'Profile' },
+const STEPS: { key: JoinStep; icon: typeof Camera; labelKey: string }[] = [
+  { key: 'welcome', icon: Sparkles, labelKey: 'joinPage.stepWelcome' },
+  { key: 'selfie',  icon: Camera,   labelKey: 'joinPage.stepSelfie' },
+  { key: 'profile', icon: User,     labelKey: 'joinPage.stepProfile' },
 ]
 
 export default function JoinPage({ params }: Props) {
+  const { t } = useI18n()
   const { slug } = use(params)
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -253,11 +257,11 @@ export default function JoinPage({ params }: Props) {
     return (
       <div className="min-h-screen bg-wia-bg flex items-center justify-center px-6">
         <div className="text-center space-y-4 max-w-md">
-          <h1 className="font-display text-2xl font-bold text-wia-ink">Venue not found</h1>
+          <h1 className="font-display text-2xl font-bold text-wia-ink">{t('joinPage.notFoundTitle')}</h1>
           <p className="text-wia-ink/50 text-sm">
-            <code className="font-mono">/{slug}</code> isn&apos;t a WIA venue yet.
+            {(() => { const [pre, post] = t('joinPage.notFoundBody').split('{slug}'); return <>{pre}<code className="font-mono">/{slug}</code>{post}</> })()}
           </p>
-          <Link href="/" className="inline-block text-wia-purple hover:underline">← Back home</Link>
+          <Link href="/" className="inline-block text-wia-purple hover:underline">{t('joinPage.backHome')}</Link>
         </div>
       </div>
     )
@@ -272,11 +276,14 @@ export default function JoinPage({ params }: Props) {
 
       <div className="relative z-10 flex-1 flex flex-col">
         {/* Top */}
-        <div className="px-6 py-5 flex items-center justify-between">
-          <span className="font-display text-xl font-bold gradient-text">WIA</span>
-          <span className="text-xs sm:text-sm text-wia-ink/55">
-            Joining <span className="text-wia-ink/60">{venue.name}</span>
-          </span>
+        <div className="px-6 py-5 flex items-center justify-between gap-3">
+          <span className="font-display text-xl font-bold gradient-text shrink-0">WIA</span>
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="text-xs sm:text-sm text-wia-ink/55 truncate">
+              {(() => { const [pre, post] = t('joinPage.joining').split('{venue}'); return <>{pre}<span className="text-wia-ink/60">{venue.name}</span>{post}</> })()}
+            </span>
+            <LanguageSelector className="shrink-0" />
+          </div>
         </div>
 
         {/* Progress */}
@@ -307,7 +314,7 @@ export default function JoinPage({ params }: Props) {
               })}
             </div>
             <div className="flex justify-between max-w-sm mx-auto mt-1.5 text-[10px] text-wia-ink/55">
-              {STEPS.map(s => <span key={s.key}>{s.label}</span>)}
+              {STEPS.map(s => <span key={s.key}>{t(s.labelKey)}</span>)}
             </div>
           </div>
         )}
@@ -352,7 +359,7 @@ export default function JoinPage({ params }: Props) {
             {step === 'entering' && (
               <EnteringStep
                 venueName={venue.name}
-                onAbort={() => { setStep('profile'); setSubmitError('Took too long. Try again — check your network.') }}
+                onAbort={() => { setStep('profile'); setSubmitError(t('joinPage.tookTooLong')) }}
               />
             )}
           </div>

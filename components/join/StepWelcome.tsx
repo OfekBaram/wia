@@ -7,6 +7,7 @@ import type { Location } from '@/lib/types'
 import { VENUE_EMOJI } from '@/lib/mock-data'
 import { getCurrentCoords, haversineMeters, GPS_GRACE_METERS, GeoError } from '@/lib/geo'
 import { LocationHelp } from './LocationHelp'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 
 interface StepWelcomeProps {
   location:    Location
@@ -15,31 +16,11 @@ interface StepWelcomeProps {
   isReturning?: boolean
 }
 
-const BENEFITS = [
-  {
-    icon:  Users,
-    title: 'See who is here right now',
-    sub:   'Every person physically present in this room. Not who lives nearby — who is HERE.',
-    color: 'text-wia-purple',
-  },
-  {
-    icon:  Heart,
-    title: 'Like, match, chat',
-    sub:   'Send up to 5 likes. When someone likes you back, chat opens up.',
-    color: 'text-wia-pink',
-  },
-  {
-    icon:  Eye,
-    title: 'You stay private to outsiders',
-    sub:   "People not at this venue can't see you. Your presence is local.",
-    color: 'text-wia-cyan',
-  },
-  {
-    icon:  Clock,
-    title: 'Disappears when you leave',
-    sub:   'Your room identity is temporary. Step outside the venue and you disconnect automatically.',
-    color: 'text-wia-green',
-  },
+const BENEFIT_META = [
+  { icon: Users, key: 'b1', color: 'text-wia-purple' },
+  { icon: Heart, key: 'b2', color: 'text-wia-pink' },
+  { icon: Eye,   key: 'b3', color: 'text-wia-cyan' },
+  { icon: Clock, key: 'b4', color: 'text-wia-green' },
 ]
 
 type GpsState =
@@ -47,9 +28,10 @@ type GpsState =
   | { status: 'checking' }
   | { status: 'too_far'; distance: number }
   | { status: 'denied' }
-  | { status: 'error';   message: string }
+  | { status: 'error';   errKey: string }
 
 export function StepWelcome({ location, liveCount, onContinue, isReturning }: StepWelcomeProps) {
+  const { t } = useI18n()
   const emoji = VENUE_EMOJI[location.category]
   const [gps, setGps] = useState<GpsState>({ status: 'idle' })
   // Which CTA the user tapped — so the result/error renders next to it, not
@@ -70,8 +52,13 @@ export function StepWelcome({ location, liveCount, onContinue, isReturning }: St
       // Within range — advance
       onContinue()
     } catch (e) {
-      if (e instanceof GeoError && e.kind === 'denied') setGps({ status: 'denied' })
-      else setGps({ status: 'error', message: e instanceof Error ? e.message : 'Location check failed' })
+      if (e instanceof GeoError && e.kind === 'denied') { setGps({ status: 'denied' }); return }
+      const kind = e instanceof GeoError ? e.kind : 'unavailable'
+      const errKey =
+        kind === 'timeout'     ? 'joinWelcome.errTimeout'
+        : kind === 'unsupported' ? 'joinWelcome.errUnsupported'
+        :                          'joinWelcome.errUnavailable'
+      setGps({ status: 'error', errKey })
     }
   }
 
@@ -87,17 +74,17 @@ export function StepWelcome({ location, liveCount, onContinue, isReturning }: St
       {checking ? (
         <>
           <Loader size={18} className="animate-spin" />
-          Verifying your location...
+          {t('joinWelcome.verifying')}
         </>
       ) : isRetry ? (
         <>
           <MapPin size={18} />
-          Try again
+          {t('joinWelcome.tryAgain')}
         </>
       ) : (
         <>
-          {isReturning ? 'Set up this visit' : 'Join the room'}
-          <ArrowRight size={18} />
+          {isReturning ? t('joinWelcome.ctaReturning') : t('joinWelcome.ctaJoin')}
+          <ArrowRight size={18} className="rtl-mirror" />
         </>
       )}
     </button>
@@ -112,10 +99,10 @@ export function StepWelcome({ location, liveCount, onContinue, isReturning }: St
             <AlertCircle size={18} className="shrink-0 mt-0.5 text-amber-600" />
             <div>
               <div className="text-sm font-semibold text-amber-800">
-                You&apos;re too far from {location.name}
+                {t('joinWelcome.tooFarTitle', { venue: location.name })}
               </div>
               <div className="text-xs text-amber-700 mt-0.5 leading-relaxed">
-                You&apos;re about <strong>{Math.round(gps.distance)}m</strong> away. The room is only joinable within {location.radiusMeters}m of the venue. Walk closer and try again.
+                {t('joinWelcome.tooFarBody', { dist: Math.round(gps.distance), radius: location.radiusMeters })}
               </div>
             </div>
           </div>
@@ -129,8 +116,8 @@ export function StepWelcome({ location, liveCount, onContinue, isReturning }: St
           <div className="flex items-start gap-2.5">
             <AlertCircle size={18} className="shrink-0 mt-0.5 text-red-600" />
             <div>
-              <div className="text-sm font-semibold text-red-700">Location check failed</div>
-              <div className="text-xs text-red-600 mt-0.5 leading-relaxed">{gps.message}</div>
+              <div className="text-sm font-semibold text-red-700">{t('joinWelcome.errTitle')}</div>
+              <div className="text-xs text-red-600 mt-0.5 leading-relaxed">{t(gps.errKey)}</div>
             </div>
           </div>
         </div>
@@ -141,7 +128,7 @@ export function StepWelcome({ location, liveCount, onContinue, isReturning }: St
   const locationNote = (
     <p className="text-center text-xs text-wia-ink/55 leading-relaxed max-w-sm mx-auto flex items-center justify-center gap-1">
       <MapPin size={11} className="text-wia-purple/60" />
-      We&apos;ll ask for your location to verify you&apos;re actually at the venue.
+      {t('joinWelcome.locNote')}
     </p>
   )
 
@@ -153,7 +140,7 @@ export function StepWelcome({ location, liveCount, onContinue, isReturning }: St
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
           </span>
-          <span className="text-xs text-emerald-300">QR verified · you&apos;re at the venue</span>
+          <span className="text-xs text-emerald-600">{t('joinWelcome.qrVerified')}</span>
         </div>
 
         {location.coverImageUrl ? (
@@ -166,7 +153,7 @@ export function StepWelcome({ location, liveCount, onContinue, isReturning }: St
         )}
 
         <h1 className="font-display text-3xl sm:text-4xl font-bold text-wia-ink leading-tight pt-1">
-          {isReturning ? 'Welcome back to ' : 'Welcome to '}
+          {isReturning ? t('joinWelcome.welcomeBack') : t('joinWelcome.welcome')}
           <span className="gradient-text">{location.name}</span>
         </h1>
 
@@ -176,10 +163,10 @@ export function StepWelcome({ location, liveCount, onContinue, isReturning }: St
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-wia-pink opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-wia-pink" />
             </span>
-            <span><strong className="text-wia-ink">{liveCount} {liveCount === 1 ? 'person is' : 'people are'}</strong> here right now.</span>
+            <span><strong className="text-wia-ink">{liveCount}</strong> {liveCount === 1 ? t('joinWelcome.liveOne') : t('joinWelcome.liveMany')}</span>
           </p>
         ) : (
-          <p className="text-wia-ink/50">Be the first one in the room.</p>
+          <p className="text-wia-ink/50">{t('joinWelcome.beFirst')}</p>
         )}
       </div>
 
@@ -193,11 +180,11 @@ export function StepWelcome({ location, liveCount, onContinue, isReturning }: St
       {!isReturning && (
         <div className="space-y-3 pt-1">
           <div className="text-[11px] uppercase tracking-wider text-wia-ink/45 text-center">
-            How it works
+            {t('joinWelcome.howItWorks')}
           </div>
-          {BENEFITS.map((b, i) => (
+          {BENEFIT_META.map((b, i) => (
             <div
-              key={b.title}
+              key={b.key}
               className="glass rounded-2xl px-4 py-3.5 flex items-start gap-3"
               style={{ animation: `enter 0.4s ${i * 80}ms backwards ease-out` }}
             >
@@ -205,8 +192,8 @@ export function StepWelcome({ location, liveCount, onContinue, isReturning }: St
                 <b.icon size={16} />
               </div>
               <div className="min-w-0">
-                <div className="text-sm font-semibold text-wia-ink">{b.title}</div>
-                <div className="text-xs text-wia-ink/50 leading-relaxed mt-0.5">{b.sub}</div>
+                <div className="text-sm font-semibold text-wia-ink">{t(`joinWelcome.${b.key}Title`)}</div>
+                <div className="text-xs text-wia-ink/50 leading-relaxed mt-0.5">{t(`joinWelcome.${b.key}Desc`)}</div>
               </div>
             </div>
           ))}

@@ -59,6 +59,14 @@ body {
   box-shadow: 0 4px 24px -4px rgba(26, 20, 48, 0.08), 0 12px 40px -12px rgba(26, 20, 48, 0.12);
 }
 
+/* ── RTL (Hebrew) ──
+   Flexbox, grid, and start/end-aligned text flip automatically under dir="rtl".
+   These rules cover what physical Tailwind utilities can't: directional arrow
+   icons (mirror them) and text inputs that should read right-aligned. */
+[dir="rtl"] .rtl-mirror { transform: scaleX(-1); }
+[dir="rtl"] input,
+[dir="rtl"] textarea { text-align: right; }
+
 /* ── Gradient text (used for the WIA wordmark + accent headlines) ── */
 .gradient-text {
   background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 50%, #06B6D4 100%);

@@ -1,48 +1,23 @@
-import Link from 'next/link'
+'use client'
+
 import { TrendingUp, Users, Repeat, Star, ArrowRight } from 'lucide-react'
 import { GlassCard } from '@/components/ui/GlassCard'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 
-const BENEFITS = [
-  {
-    icon: Users,
-    title: 'Live social energy',
-    description: 'Transform your venue into a live social hub. Guests discover each other organically.',
-    color: 'text-wia-purple',
-    bg: 'bg-wia-purple/10',
-    border: 'border-wia-purple/20',
-  },
-  {
-    icon: Repeat,
-    title: 'Repeat visits',
-    description: 'People come back because the social experience is different every time.',
-    color: 'text-wia-pink',
-    bg: 'bg-wia-pink/10',
-    border: 'border-wia-pink/20',
-  },
-  {
-    icon: TrendingUp,
-    title: 'Real-time insights',
-    description: 'See peak hours, social engagement, and vibe metrics for your venue.',
-    color: 'text-wia-cyan',
-    bg: 'bg-wia-cyan/10',
-    border: 'border-wia-cyan/20',
-  },
-  {
-    icon: Star,
-    title: 'Premium branding',
-    description: 'Your venue becomes known as the place where real social connections happen.',
-    color: 'text-wia-amber',
-    bg: 'bg-amber-500/10',
-    border: 'border-amber-500/20',
-  },
+const BENEFIT_META = [
+  { icon: Users,       key: 'b1', color: 'text-wia-purple', bg: 'bg-wia-purple/10', border: 'border-wia-purple/20' },
+  { icon: Repeat,      key: 'b2', color: 'text-wia-pink',   bg: 'bg-wia-pink/10',   border: 'border-wia-pink/20' },
+  { icon: TrendingUp,  key: 'b3', color: 'text-wia-cyan',   bg: 'bg-wia-cyan/10',   border: 'border-wia-cyan/20' },
+  { icon: Star,        key: 'b4', color: 'text-wia-amber',  bg: 'bg-amber-500/10',  border: 'border-amber-500/20' },
 ]
 
-const VENUE_TYPES = [
-  'Bars & Clubs', 'Festivals', 'Universities', 'Coworking',
-  'Hotels', 'Airports', 'Gyms', 'Cafes', 'Conferences', 'Beaches',
+const VENUE_TYPE_KEYS = [
+  'tBars', 'tFestivals', 'tUniversities', 'tCoworking',
+  'tHotels', 'tAirports', 'tGyms', 'tCafes', 'tConferences', 'tBeaches',
 ]
 
 export function ForVenues() {
+  const { t } = useI18n()
   return (
     <section id="venues" className="relative py-32">
       {/* Background */}
@@ -54,25 +29,24 @@ export function ForVenues() {
           {/* Left */}
           <div>
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-wia-ink/15 bg-white/5 text-wia-ink/50 text-sm mb-6">
-              For venues & businesses
+              {t('forVenues.badge')}
             </div>
             <h2 className="font-display text-5xl font-bold text-wia-ink mb-6 leading-tight">
-              Make your place{' '}
-              <span className="gradient-text">socially alive.</span>
+              {t('forVenues.titleA')}{' '}
+              <span className="gradient-text">{t('forVenues.titleB')}</span>
             </h2>
             <p className="text-wia-ink/50 text-lg leading-relaxed mb-8">
-              WIA turns your venue into a digital-physical social hub.
-              Get a unique URL, display it at your entrance, and watch your guests discover each other.
+              {t('forVenues.body')}
             </p>
 
             {/* Venue types */}
             <div className="flex flex-wrap gap-2 mb-10">
-              {VENUE_TYPES.map((type) => (
+              {VENUE_TYPE_KEYS.map((k) => (
                 <span
-                  key={type}
+                  key={k}
                   className="px-3 py-1 rounded-full text-sm glass border-wia-ink/15 text-wia-ink/50"
                 >
-                  {type}
+                  {t(`forVenues.${k}`)}
                 </span>
               ))}
             </div>
@@ -83,22 +57,22 @@ export function ForVenues() {
                 href="mailto:venues@wia.com"
                 className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-wia-purple to-wia-pink text-white font-semibold hover:opacity-90 transition-all shadow-xl shadow-purple-500/20"
               >
-                Get your venue on WIA
-                <ArrowRight size={16} />
+                {t('forVenues.cta')}
+                <ArrowRight size={16} className="rtl-mirror" />
               </a>
-              <span className="text-wia-ink/55 text-sm">Free to start</span>
+              <span className="text-wia-ink/55 text-sm">{t('forVenues.freeToStart')}</span>
             </div>
           </div>
 
           {/* Right — benefits grid */}
           <div className="grid sm:grid-cols-2 gap-4">
-            {BENEFITS.map((benefit) => (
-              <GlassCard key={benefit.title} className="p-6 space-y-3">
+            {BENEFIT_META.map((benefit) => (
+              <GlassCard key={benefit.key} className="p-6 space-y-3">
                 <div className={`w-10 h-10 rounded-xl ${benefit.bg} border ${benefit.border} flex items-center justify-center`}>
                   <benefit.icon size={20} className={benefit.color} />
                 </div>
-                <h3 className="font-display font-semibold text-wia-ink">{benefit.title}</h3>
-                <p className="text-sm text-wia-ink/50 leading-relaxed">{benefit.description}</p>
+                <h3 className="font-display font-semibold text-wia-ink">{t(`forVenues.${benefit.key}Title`)}</h3>
+                <p className="text-sm text-wia-ink/50 leading-relaxed">{t(`forVenues.${benefit.key}Desc`)}</p>
               </GlassCard>
             ))}
           </div>

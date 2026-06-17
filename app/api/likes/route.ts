@@ -69,11 +69,19 @@ export async function POST(req: Request) {
       admin.from('presence').select('name').eq('venue_id', venueId).eq('user_id', fromUserId).maybeSingle(),
     ])
     if (venue) {
+      const url = `/${venue.slug}`
+      const tag = `match-${venueId}-${fromUserId}`
       await sendPushToUser(toUserId, {
-        title: "It's a match! 💜",
-        body:  `You and ${liker?.name ?? 'someone'} liked each other at ${venue.name}.`,
-        url:   `/${venue.slug}`,
-        tag:   `match-${venueId}-${fromUserId}`,
+        en: {
+          title: "It's a match! 💜",
+          body:  `You and ${liker?.name ?? 'someone'} liked each other at ${venue.name}.`,
+          url, tag,
+        },
+        he: {
+          title: 'יש מאצ׳! 💜',
+          body:  `${liker?.name ?? 'מישהו'} ואתם עשיתם לייק אחד לשני ב-${venue.name}.`,
+          url, tag,
+        },
       })
     }
   }

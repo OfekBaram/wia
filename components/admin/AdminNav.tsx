@@ -5,20 +5,18 @@ import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Plus, LogOut, BarChart2 } from 'lucide-react'
 import { useAdminRole } from '@/lib/hooks/useAdminRole'
 import { signOut } from '@/lib/auth'
-
-const BASE_LINKS = [
-  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-]
+import { useI18n } from '@/lib/i18n/I18nProvider'
 
 export function AdminNav() {
   const pathname = usePathname()
+  const { t } = useI18n()
   const { me } = useAdminRole()
   const superAdmin = me?.role === 'super_admin'
 
   const links = [
-    ...BASE_LINKS,
-    ...(superAdmin ? [{ href: '/admin/venues/new', label: 'New venue',  icon: Plus      }] : []),
-    ...(superAdmin ? [{ href: '/admin/analytics',  label: 'Analytics',  icon: BarChart2 }] : []),
+    { href: '/admin', labelKey: 'adminNav.dashboard', icon: LayoutDashboard },
+    ...(superAdmin ? [{ href: '/admin/venues/new', labelKey: 'adminNav.newVenue',  icon: Plus      }] : []),
+    ...(superAdmin ? [{ href: '/admin/analytics',  labelKey: 'adminNav.analytics', icon: BarChart2 }] : []),
   ]
 
   return (
@@ -26,10 +24,10 @@ export function AdminNav() {
       <div className="mx-auto max-w-7xl px-6 py-3 flex items-center gap-4">
         <Link href="/admin" className="flex items-center gap-2 group shrink-0">
           <span className="text-lg font-display font-bold tracking-tight gradient-text">WIA</span>
-          <span className="text-wia-ink/55 text-xs uppercase tracking-wider hidden sm:inline">{superAdmin ? 'admin' : 'venue'}</span>
+          <span className="text-wia-ink/55 text-xs uppercase tracking-wider hidden sm:inline">{superAdmin ? t('adminNav.admin') : t('adminNav.venue')}</span>
         </Link>
 
-        <nav className="flex items-center gap-1 ml-2">
+        <nav className="flex items-center gap-1 ms-2">
           {links.map(link => {
             const isActive = pathname === link.href
             return (
@@ -43,29 +41,29 @@ export function AdminNav() {
                 }`}
               >
                 <link.icon size={14} />
-                <span className="hidden sm:inline">{link.label}</span>
+                <span className="hidden sm:inline">{t(link.labelKey)}</span>
               </Link>
             )
           })}
         </nav>
 
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ms-auto flex items-center gap-3">
           <Link
             href="/"
             className="text-xs text-wia-ink/60 hover:text-wia-ink/70 transition-colors hidden sm:inline"
           >
-            View public site →
+            {t('adminNav.viewPublic')}
           </Link>
           {me && (
-            <div className="flex items-center gap-2 pl-3 border-l border-wia-ink/10">
-              <div className="text-right hidden sm:block">
+            <div className="flex items-center gap-2 ps-3 border-s border-wia-ink/10">
+              <div className="text-end hidden sm:block">
                 <div className="text-xs font-medium text-wia-ink truncate max-w-[160px]">{me.email}</div>
-                <div className="text-[10px] uppercase tracking-wider text-wia-purple">{superAdmin ? 'Admin' : 'Venue owner'}</div>
+                <div className="text-[10px] uppercase tracking-wider text-wia-purple">{superAdmin ? t('adminNav.roleAdmin') : t('adminNav.roleOwner')}</div>
               </div>
               <button
                 onClick={signOut}
                 className="p-2 rounded-lg text-wia-ink/60 hover:text-wia-ink hover:bg-white/5 transition-colors"
-                title="Sign out"
+                title={t('adminNav.signOut')}
               >
                 <LogOut size={14} />
               </button>

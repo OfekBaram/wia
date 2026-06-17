@@ -25,17 +25,22 @@ export interface PushPayload {
   tag?:  string   // collapses notifications with the same tag
 }
 
-export async function sendPushToUser(userId: string, payload: PushPayload): Promise<void> {
+/** Localized payloads, keyed by locale. Each subscription is notified in the
+ *  language the user picked when they enabled notifications. */
+export type LocalizedPush = { en: PushPayload; he: PushPayload }
+
+export async function sendPushToUser(userId: string, byLocale: LocalizedPush): Promise<void> {
   try {
     if (!ensureConfigured()) return
     const admin = adminClient()
     const { data: subs } = await admin
       .from('push_subscriptions')
-      .select('id, subscription')
+      .select('id, subscription, locale')
       .eq('user_id', userId)
     if (!subs?.length) return
 
     await Promise.all(subs.map(async (s) => {
+      const payload = (s as { locale?: string }).locale === 'he' ? byLocale.he : byLocale.en
       try {
         await webpush.sendNotification(
           s.subscription as webpush.PushSubscription,

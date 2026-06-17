@@ -10,6 +10,7 @@ import { RoomGate } from '@/components/room/RoomGate'
 import { MatchOverlay } from '@/components/room/MatchOverlay'
 import { PushPrompt } from '@/components/room/PushPrompt'
 import { useGeofence } from '@/lib/hooks/useGeofence'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -51,6 +52,7 @@ function shapePresence(rows: unknown[]): PresenceProfile[] {
 }
 
 export default function RoomPage({ params }: Props) {
+  const { t } = useI18n()
   const { slug } = use(params)
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -194,15 +196,15 @@ export default function RoomPage({ params }: Props) {
           <div className="w-16 h-16 rounded-2xl bg-wia-purple/10 border border-wia-purple/30 flex items-center justify-center mx-auto">
             <MapPin size={28} className="text-wia-purple" />
           </div>
-          <h1 className="font-display text-3xl font-bold gradient-text">Venue not found</h1>
+          <h1 className="font-display text-3xl font-bold gradient-text">{t('joinPage.notFoundTitle')}</h1>
           <p className="text-wia-ink/70">
-            <code className="font-mono text-wia-ink">/{slug}</code> isn&apos;t a WIA venue yet.
+            {(() => { const [pre, post] = t('joinPage.notFoundBody').split('{slug}'); return <>{pre}<code className="font-mono text-wia-ink">/{slug}</code>{post}</> })()}
           </p>
           <Link
             href="/"
             className="inline-block px-6 py-3 rounded-xl bg-gradient-to-r from-wia-purple to-wia-pink text-white font-semibold hover:opacity-90 transition-all"
           >
-            Back to WIA
+            {t('joinPage.backHome')}
           </Link>
         </div>
       </div>
@@ -229,8 +231,8 @@ export default function RoomPage({ params }: Props) {
 
       {geofenced && (
         <div className="relative z-20 mx-auto max-w-6xl px-4 sm:px-6 pt-4">
-          <div className="glass-strong rounded-2xl px-4 py-3 border border-amber-500/30 bg-amber-500/5 text-sm text-amber-200">
-            You stepped outside <strong>{venue.name}</strong> — disconnected from the room. Scan the QR again to rejoin.
+          <div className="glass-strong rounded-2xl px-4 py-3 border border-amber-500/30 bg-amber-500/5 text-sm text-amber-700">
+            {(() => { const [pre, post] = t('roomPage.geofenced').split('{venue}'); return <>{pre}<strong>{venue.name}</strong>{post}</> })()}
           </div>
         </div>
       )}

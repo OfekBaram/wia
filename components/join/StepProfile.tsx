@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { ArrowRight, Minus, Plus, Mail, Shield, AlertCircle } from 'lucide-react'
 import type { Gender } from '@/lib/types'
 import { cn } from '@/lib/cn'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 
 interface StepProfileProps {
   selfieUrl: string
@@ -24,25 +25,18 @@ interface StepProfileProps {
   }) => void
 }
 
-const GENDERS: { value: Gender; label: string; icon: string }[] = [
-  { value: 'woman',        label: 'Woman',             icon: '♀' },
-  { value: 'man',          label: 'Man',               icon: '♂' },
-  { value: 'non-binary',   label: 'Non-binary',        icon: '⚧' },
-  { value: 'unspecified',  label: 'Prefer not to say', icon: '·' },
+const GENDERS: { value: Gender; labelKey: string; icon: string }[] = [
+  { value: 'woman',        labelKey: 'profile.gWoman',       icon: '♀' },
+  { value: 'man',          labelKey: 'profile.gMan',         icon: '♂' },
+  { value: 'non-binary',   labelKey: 'profile.gNonBinary',   icon: '⚧' },
+  { value: 'unspecified',  labelKey: 'profile.gUnspecified', icon: '·' },
 ]
 
 const MIN_AGE     = 18
 const MAX_AGE     = 99
 const MAX_WORDS   = 10
 
-const STATUS_SUGGESTIONS = [
-  'Looking for someone fun to talk to',
-  'Just here with friends, open to meeting people',
-  'Solo traveler exploring the night',
-  'Dance mood, who is joining the floor',
-  'Networking — looking for founders',
-  'Chill vibes, drinks and good company',
-]
+const SUGGESTION_KEYS = ['profile.sug1', 'profile.sug2', 'profile.sug3', 'profile.sug4', 'profile.sug5', 'profile.sug6']
 
 function countWords(text: string) {
   const trimmed = text.trim()
@@ -55,6 +49,7 @@ function isValidEmail(value: string): boolean {
 }
 
 export function StepProfile({ selfieUrl, existingMaster, onComplete }: StepProfileProps) {
+  const { t } = useI18n()
   const isFirstTime = !existingMaster
 
   const [name,       setName]       = useState(existingMaster?.name  ?? '')
@@ -101,10 +96,10 @@ export function StepProfile({ selfieUrl, existingMaster, onComplete }: StepProfi
     <div className="space-y-7">
       <div className="text-center">
         <h2 className="font-display text-3xl font-bold text-wia-ink mb-2">
-          Set your presence
+          {t('profile.title')}
         </h2>
         <p className="text-wia-ink/50 text-sm">
-          This is your temporary identity here. It disappears when you leave.
+          {t('profile.sub')}
         </p>
       </div>
 
@@ -114,7 +109,7 @@ export function StepProfile({ selfieUrl, existingMaster, onComplete }: StepProfi
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={selfieUrl}
-            alt="Your selfie"
+            alt={t('selfie.alt')}
             className="w-24 h-24 rounded-2xl object-cover ring-2 ring-wia-purple/40"
           />
           <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 border-2 border-wia-bg flex items-center justify-center">
@@ -126,13 +121,13 @@ export function StepProfile({ selfieUrl, existingMaster, onComplete }: StepProfi
       {/* Name */}
       <div>
         <label className="block text-sm font-medium text-wia-ink/60 mb-2">
-          Your name
+          {t('profile.name')}
         </label>
         <input
           type="text"
           value={name}
           onChange={e => setName(e.target.value)}
-          placeholder="e.g. Maya, Kai, Zara..."
+          placeholder={t('profile.namePh')}
           maxLength={24}
           className="w-full glass-strong rounded-xl px-4 py-3 text-wia-ink placeholder:text-wia-ink/50 outline-none focus:ring-1 focus:ring-wia-purple/50 transition-all"
         />
@@ -141,7 +136,7 @@ export function StepProfile({ selfieUrl, existingMaster, onComplete }: StepProfi
       {/* Age */}
       <div>
         <label className="block text-sm font-medium text-wia-ink/60 mb-2">
-          Age
+          {t('profile.age')}
         </label>
         <div className="flex items-center gap-3">
           <button
@@ -162,7 +157,7 @@ export function StepProfile({ selfieUrl, existingMaster, onComplete }: StepProfi
               max={MAX_AGE}
               className="w-16 bg-transparent text-center font-display font-bold text-2xl text-wia-ink outline-none"
             />
-            <span className="text-xs text-wia-ink/55">years</span>
+            <span className="text-xs text-wia-ink/55">{t('profile.years')}</span>
           </div>
           <button
             onClick={() => bumpAge(1)}
@@ -176,7 +171,7 @@ export function StepProfile({ selfieUrl, existingMaster, onComplete }: StepProfi
       {/* Gender */}
       <div>
         <label className="block text-sm font-medium text-wia-ink/60 mb-2">
-          Gender
+          {t('profile.gender')}
         </label>
         <div className="grid grid-cols-2 gap-2">
           {GENDERS.map(g => (
@@ -191,7 +186,7 @@ export function StepProfile({ selfieUrl, existingMaster, onComplete }: StepProfi
               )}
             >
               <span className="text-base text-wia-ink/60">{g.icon}</span>
-              <span className="truncate">{g.label}</span>
+              <span className="truncate">{t(g.labelKey)}</span>
             </button>
           ))}
         </div>
@@ -201,7 +196,7 @@ export function StepProfile({ selfieUrl, existingMaster, onComplete }: StepProfi
       <div>
         <div className="flex items-center justify-between mb-2">
           <label className="block text-sm font-medium text-wia-ink/60">
-            What are you up to here? <span className="text-wia-ink/40">(optional)</span>
+            {t('profile.statusLabel')} <span className="text-wia-ink/40">{t('profile.optional')}</span>
           </label>
           <span
             className={cn(
@@ -212,13 +207,13 @@ export function StepProfile({ selfieUrl, existingMaster, onComplete }: StepProfi
               : 'text-wia-ink/60',
             )}
           >
-            {wordCount}/{MAX_WORDS} words
+            {t('profile.words', { count: wordCount, max: MAX_WORDS })}
           </span>
         </div>
         <textarea
           value={statusText}
           onChange={e => handleStatusChange(e.target.value)}
-          placeholder="A short line about what you're doing tonight..."
+          placeholder={t('profile.statusPh')}
           rows={2}
           className="w-full glass-strong rounded-xl px-4 py-3 text-wia-ink placeholder:text-wia-ink/50 outline-none focus:ring-1 focus:ring-wia-purple/50 transition-all resize-none"
         />
@@ -226,15 +221,18 @@ export function StepProfile({ selfieUrl, existingMaster, onComplete }: StepProfi
         {/* Suggestions */}
         {statusText.length === 0 && (
           <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-            {STATUS_SUGGESTIONS.map(s => (
-              <button
-                key={s}
-                onClick={() => handleStatusChange(s)}
-                className="shrink-0 px-2.5 py-1 rounded-lg text-[11px] text-wia-ink/60 glass hover:text-wia-ink/80 hover:border-wia-purple/30 transition-all"
-              >
-                {s}
-              </button>
-            ))}
+            {SUGGESTION_KEYS.map(key => {
+              const s = t(key)
+              return (
+                <button
+                  key={key}
+                  onClick={() => handleStatusChange(s)}
+                  className="shrink-0 px-2.5 py-1 rounded-lg text-[11px] text-wia-ink/60 glass hover:text-wia-ink/80 hover:border-wia-purple/30 transition-all"
+                >
+                  {s}
+                </button>
+              )
+            })}
           </div>
         )}
       </div>
@@ -244,13 +242,13 @@ export function StepProfile({ selfieUrl, existingMaster, onComplete }: StepProfi
       {isFirstTime && (
         <div className="pt-2 border-t border-wia-ink/10">
           <label className="block text-sm font-medium text-wia-ink/60 mb-2">
-            Your email
+            {t('profile.email')}
           </label>
           <div className="relative">
             <Mail
               size={15}
               className={cn(
-                'absolute left-4 top-1/2 -translate-y-1/2 transition-colors',
+                'absolute start-4 top-1/2 -translate-y-1/2 transition-colors',
                 emailFocused ? 'text-wia-purple' : 'text-wia-ink/55',
               )}
             />
@@ -263,20 +261,20 @@ export function StepProfile({ selfieUrl, existingMaster, onComplete }: StepProfi
               onFocus={() => setEmailFocused(true)}
               onBlur={()  => setEmailFocused(false)}
               placeholder="you@email.com"
-              className="w-full glass-strong rounded-xl pl-11 pr-4 py-3 text-wia-ink placeholder:text-wia-ink/50 outline-none focus:ring-1 focus:ring-wia-purple/50 transition-all"
+              className="w-full glass-strong rounded-xl ps-11 pe-4 py-3 text-wia-ink placeholder:text-wia-ink/50 outline-none focus:ring-1 focus:ring-wia-purple/50 transition-all"
             />
           </div>
 
           {email.length > 0 && !isValidEmail(email) && (
-            <div className="mt-2 flex items-center gap-1.5 text-xs text-amber-400/80">
+            <div className="mt-2 flex items-center gap-1.5 text-xs text-amber-600">
               <AlertCircle size={12} />
-              That doesn&apos;t look like a valid email
+              {t('profile.emailBad')}
             </div>
           )}
 
           <p className="mt-2 text-[11px] text-wia-ink/55 leading-relaxed flex items-center gap-1">
             <Shield size={11} className="text-wia-purple/70" />
-            Saved as your WIA identity across every venue. Never shared, never spam.
+            {t('profile.emailNote')}
           </p>
         </div>
       )}
@@ -292,12 +290,12 @@ export function StepProfile({ selfieUrl, existingMaster, onComplete }: StepProfi
             : 'glass text-wia-ink/50 cursor-not-allowed',
         )}
       >
-        Enter the room
-        <ArrowRight size={20} />
+        {t('profile.enterRoom')}
+        <ArrowRight size={20} className="rtl-mirror" />
       </button>
 
       <p className="text-center text-xs text-wia-ink/50">
-        Your presence at this venue expires when you leave. No permanent social media — just this moment.
+        {t('profile.footNote')}
       </p>
     </div>
   )

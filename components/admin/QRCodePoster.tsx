@@ -4,6 +4,7 @@ import { useRef } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { Download, Printer, Copy, Check } from 'lucide-react'
 import { useState } from 'react'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 
 interface QRCodePosterProps {
   venueName: string
@@ -13,6 +14,7 @@ interface QRCodePosterProps {
 }
 
 export function QRCodePoster({ venueName, url, withPoster = true }: QRCodePosterProps) {
+  const { t } = useI18n()
   const ref = useRef<HTMLDivElement>(null)
   const [copied, setCopied] = useState(false)
 
@@ -61,7 +63,7 @@ export function QRCodePoster({ venueName, url, withPoster = true }: QRCodePoster
         {/* Top */}
         <div className="relative z-10 text-center space-y-2">
           <div className="text-xs uppercase tracking-[0.2em] opacity-70">
-            Welcome to
+            {t("qr.welcomeTo")}
           </div>
           <h2 className="font-display text-2xl sm:text-3xl font-bold leading-tight">
             {venueName}
@@ -76,10 +78,10 @@ export function QRCodePoster({ venueName, url, withPoster = true }: QRCodePoster
         {/* Bottom */}
         <div className="relative z-10 text-center space-y-1">
           <div className="font-display text-lg font-bold">
-            Who is around?
+            {t("qr.whoIsAround")}
           </div>
           <div className="text-xs opacity-80">
-            Scan to see who&apos;s here right now
+            {t("qr.scanToSee")}
           </div>
           <div className="text-[10px] opacity-50 pt-1">wia.com</div>
         </div>
@@ -92,21 +94,21 @@ export function QRCodePoster({ venueName, url, withPoster = true }: QRCodePoster
           className="flex items-center gap-2 px-4 py-2 rounded-xl glass border border-wia-ink/15 hover:bg-white/10 text-wia-ink/70 hover:text-wia-ink text-sm font-medium transition-all"
         >
           {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
-          {copied ? 'Copied!' : 'Copy link'}
+          {copied ? t("qr.copied") : t("qr.copyLink")}
         </button>
         <button
           onClick={downloadSvg}
           className="flex items-center gap-2 px-4 py-2 rounded-xl glass border border-wia-ink/15 hover:bg-white/10 text-wia-ink/70 hover:text-wia-ink text-sm font-medium transition-all"
         >
           <Download size={14} />
-          Download QR
+          {t("qr.downloadQr")}
         </button>
         <button
           onClick={printPoster}
           className="flex items-center gap-2 px-4 py-2 rounded-xl glass border border-wia-ink/15 hover:bg-white/10 text-wia-ink/70 hover:text-wia-ink text-sm font-medium transition-all"
         >
           <Printer size={14} />
-          Print
+          {t("qr.print")}
         </button>
       </div>
     </div>
