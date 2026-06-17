@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { QrCode, Zap, ArrowRight } from 'lucide-react'
 import { LiveDot } from '@/components/ui/LiveBadge'
 import { HERO_CARDS } from '@/lib/mock-data'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 
 function HeroPersonCard({
   name,
@@ -52,6 +53,7 @@ function HeroPersonCard({
 }
 
 export function Hero() {
+  const { t } = useI18n()
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden pt-24 pb-16">
       {/* Background orbs */}
@@ -66,21 +68,21 @@ export function Hero() {
             {/* Badge */}
             <div className="enter-1 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-wia-purple/30 bg-wia-purple/10 text-wia-purple text-sm font-medium">
               <Zap size={14} className="fill-current" />
-              Real-time social discovery
+              {t('hero.badge')}
             </div>
 
             {/* Headline */}
             <div className="enter-2 space-y-2">
               <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.05] tracking-tight">
-                <span className="gradient-text">Who is HERE</span>
+                <span className="gradient-text">{t('hero.titleA')}</span>
                 <br />
-                <span className="text-wia-ink">right now?</span>
+                <span className="text-wia-ink">{t('hero.titleB')}</span>
               </h1>
             </div>
 
             {/* Subheading */}
             <p className="enter-3 text-xl text-wia-ink/60 leading-relaxed max-w-lg">
-              The live social layer on top of every place. See, feel, and connect with the people physically present with you — right now.
+              {t('hero.subheading')}
             </p>
 
             {/* CTAs — homepage isn't the funnel. Real users arrive via QR. */}
@@ -90,9 +92,9 @@ export function Hero() {
                   <QrCode size={16} className="text-wia-purple" />
                 </div>
                 <div className="text-sm">
-                  <div className="text-wia-ink font-medium mb-0.5">Already at a venue?</div>
+                  <div className="text-wia-ink font-medium mb-0.5">{t('hero.atVenueTitle')}</div>
                   <div className="text-wia-ink/70 text-xs leading-relaxed">
-                    Scan the WIA QR on a table or wall with your phone camera. There&apos;s no other way in — that&apos;s the point.
+                    {t('hero.atVenueBody')}
                   </div>
                 </div>
               </div>
@@ -102,14 +104,14 @@ export function Hero() {
                   href="/admin/login"
                   className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-wia-purple to-wia-pink text-white font-semibold hover:opacity-90 transition-all shadow-xl shadow-purple-500/30"
                 >
-                  Get WIA at your venue
-                  <ArrowRight size={16} />
+                  {t('hero.ctaPrimary')}
+                  <ArrowRight size={16} className="rtl-mirror" />
                 </Link>
                 <Link
                   href="#nearby"
                   className="flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl glass border border-wia-ink/15 text-wia-ink hover:text-wia-ink text-sm font-medium transition-all"
                 >
-                  See live rooms
+                  {t('hero.ctaSecondary')}
                 </Link>
               </div>
             </div>
@@ -118,7 +120,7 @@ export function Hero() {
             <div className="enter-5 flex items-center gap-3 text-xs sm:text-sm text-wia-ink/70 flex-wrap">
               <div className="flex items-center gap-2">
                 <LiveDot />
-                <span>Brand new — your venue can be the first</span>
+                <span>{t('hero.statusNew')}</span>
               </div>
             </div>
           </div>

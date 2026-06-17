@@ -2,6 +2,10 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { AuthGate } from '@/components/auth/AuthGate'
 import { FragmentErrorHandler } from '@/components/auth/FragmentErrorHandler'
+import { I18nProvider } from '@/lib/i18n/I18nProvider'
+
+// Runs before hydration so a saved Hebrew choice sets RTL on <html> with no flash.
+const NO_FLASH_LOCALE = `(function(){try{var l=localStorage.getItem('wia:locale');if(l==='he'){document.documentElement.lang='he';document.documentElement.dir='rtl';}}catch(e){}})();`
 
 export const metadata: Metadata = {
   title: {
@@ -34,9 +38,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: NO_FLASH_LOCALE }} />
+      </head>
       <body className="bg-wia-bg text-wia-ink antialiased">
-        <FragmentErrorHandler />
-        <AuthGate>{children}</AuthGate>
+        <I18nProvider>
+          <FragmentErrorHandler />
+          <AuthGate>{children}</AuthGate>
+        </I18nProvider>
       </body>
     </html>
   )

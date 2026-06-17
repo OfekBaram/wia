@@ -1,7 +1,11 @@
+'use client'
+
 import Link from 'next/link'
 import { LiveDot } from '@/components/ui/LiveBadge'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 
 export function Footer() {
+  const { t } = useI18n()
   return (
     <footer className="border-t border-wia-ink/10 py-12">
       <div className="mx-auto max-w-7xl px-6">
@@ -11,19 +15,19 @@ export function Footer() {
             <span className="text-wia-ink/50">·</span>
             <div className="flex items-center gap-2 text-sm text-wia-ink/60">
               <LiveDot />
-              91 people live right now
+              {t('footer.liveNow', { count: 91 })}
             </div>
           </div>
 
           <div className="flex items-center gap-6 text-sm text-wia-ink/55">
-            <Link href="#" className="hover:text-wia-ink/60 transition-colors">Privacy</Link>
-            <Link href="#" className="hover:text-wia-ink/60 transition-colors">Terms</Link>
-            <Link href="#" className="hover:text-wia-ink/60 transition-colors">Safety</Link>
-            <Link href="/admin/login" className="hover:text-wia-ink/60 transition-colors">Venue admin</Link>
+            <Link href="#" className="hover:text-wia-ink/60 transition-colors">{t('footer.privacy')}</Link>
+            <Link href="#" className="hover:text-wia-ink/60 transition-colors">{t('footer.terms')}</Link>
+            <Link href="#" className="hover:text-wia-ink/60 transition-colors">{t('footer.safety')}</Link>
+            <Link href="/admin/login" className="hover:text-wia-ink/60 transition-colors">{t('footer.venueAdmin')}</Link>
           </div>
 
           <div className="text-xs text-wia-ink/50">
-            © 2026 WIA Platform · Who Is Around
+            {t('footer.copyright')}
           </div>
         </div>
       </div>

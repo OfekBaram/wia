@@ -6,6 +6,7 @@ import { QrCode, Lock, Plus, Sparkles } from 'lucide-react'
 import { LiveBadge } from '@/components/ui/LiveBadge'
 import { GlassCard } from '@/components/ui/GlassCard'
 import { VENUE_EMOJI } from '@/lib/mock-data'
+import { useI18n } from '@/lib/i18n/I18nProvider'
 
 interface VenueItem {
   slug: string; name: string; tagline: string; category: string
@@ -13,6 +14,7 @@ interface VenueItem {
 }
 
 export function LiveVenues() {
+  const { t } = useI18n()
   const [venues,  setVenues]  = useState<VenueItem[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -36,17 +38,17 @@ export function LiveVenues() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
               </span>
-              <span className="text-emerald-400 text-sm font-medium">Active right now</span>
+              <span className="text-emerald-400 text-sm font-medium">{t('venues.activeNow')}</span>
             </div>
             <h2 className="font-display text-4xl lg:text-5xl font-bold text-wia-ink">
-              What&apos;s live nearby
+              {t('venues.title')}
             </h2>
           </div>
         </div>
 
         <p className="text-wia-ink/60 text-sm sm:text-base mb-10 max-w-2xl flex items-start gap-2">
           <Lock size={14} className="mt-0.5 shrink-0 text-wia-purple" />
-          You can see venues that are alive right now, but joining a room only works by scanning the QR code at the venue itself.
+          {t('venues.lockNote')}
         </p>
 
         {loading && (
@@ -61,17 +63,17 @@ export function LiveVenues() {
               <Sparkles size={22} className="text-wia-purple" />
             </div>
             <h3 className="font-display text-2xl font-bold text-wia-ink mb-2">
-              No venues live yet
+              {t('venues.emptyTitle')}
             </h3>
             <p className="text-wia-ink/50 max-w-md mx-auto mb-6">
-              WIA is brand new. Get your venue listed and be one of the first places turning real-life social energy into something you can see.
+              {t('venues.emptyBody')}
             </p>
             <Link
               href="/admin/login"
               className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-wia-purple to-wia-pink text-white font-semibold hover:opacity-90 transition-all shadow-lg shadow-purple-500/20"
             >
               <Plus size={16} />
-              List your venue
+              {t('venues.listCta')}
             </Link>
           </GlassCard>
         )}
@@ -83,7 +85,7 @@ export function LiveVenues() {
                 key={venue.slug}
                 className="p-5 border border-wia-ink/10 relative group"
               >
-                <div className="absolute top-3 right-3 w-7 h-7 rounded-lg bg-white/5 border border-wia-ink/15 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity">
+                <div className="absolute top-3 end-3 w-7 h-7 rounded-lg bg-white/5 border border-wia-ink/15 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity">
                   <Lock size={12} className="text-wia-ink/50" />
                 </div>
 
@@ -92,7 +94,7 @@ export function LiveVenues() {
                   <LiveBadge count={venue.liveCount} size="sm" />
                 </div>
 
-                <h3 className="font-display font-semibold text-wia-ink mb-1 leading-tight pr-8">
+                <h3 className="font-display font-semibold text-wia-ink mb-1 leading-tight pe-8">
                   {venue.name}
                 </h3>
                 <p className="text-xs text-wia-ink/60 capitalize mb-4">{venue.category}</p>
@@ -100,7 +102,7 @@ export function LiveVenues() {
                 <div className="flex items-center justify-end text-[10px] uppercase tracking-wider">
                   <span className="flex items-center gap-1 text-wia-purple/80">
                     <QrCode size={10} />
-                    Scan at venue
+                    {t('venues.scanAtVenue')}
                   </span>
                 </div>
               </GlassCard>
