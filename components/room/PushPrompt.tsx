@@ -32,11 +32,14 @@ async function subscribe(): Promise<boolean> {
       applicationServerKey: urlBase64ToUint8Array(vapid),
     })
   }
+  // Remember which language to send this person's push notifications in.
+  let locale = 'en'
+  try { locale = localStorage.getItem('wia:locale') === 'he' ? 'he' : 'en' } catch { /* ignore */ }
   const res = await fetch('/api/push/subscribe', {
     method:      'POST',
     headers:     { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body:        JSON.stringify({ subscription: sub.toJSON() }),
+    body:        JSON.stringify({ subscription: sub.toJSON(), locale }),
   })
   return res.ok
 }

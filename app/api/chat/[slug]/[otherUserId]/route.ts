@@ -113,11 +113,12 @@ export async function POST(req: Request, params: RouteParams) {
     c.admin.from('presence').select('name').eq('venue_id', c.venueId).eq('user_id', c.me).maybeSingle(),
   ])
   if (venue) {
+    const body = trimmed.length > 80 ? `${trimmed.slice(0, 77)}...` : trimmed
+    const url  = `/${venue.slug}`
+    const tag  = `chat-${c.venueId}-${c.me}`
     await sendPushToUser(c.otherUserId, {
-      title: `${sender?.name ?? 'Someone'} sent you a message`,
-      body:  trimmed.length > 80 ? `${trimmed.slice(0, 77)}...` : trimmed,
-      url:   `/${venue.slug}`,
-      tag:   `chat-${c.venueId}-${c.me}`,
+      en: { title: `${sender?.name ?? 'Someone'} sent you a message`, body, url, tag },
+      he: { title: `${sender?.name ?? 'מישהו'} שלח לכם הודעה`, body, url, tag },
     })
   }
 
