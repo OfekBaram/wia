@@ -1,14 +1,15 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { ArrowRight, Minus, Plus, Mail, Shield, AlertCircle } from 'lucide-react'
 import type { Gender } from '@/lib/types'
 import { cn } from '@/lib/cn'
 import { useI18n } from '@/lib/i18n/I18nProvider'
+import { GoogleSignInButton, GOOGLE_ENABLED } from './GoogleSignInButton'
 
 interface StepProfileProps {
   selfieUrl: string
-  /** Pre-populated when the user already has a master account. */
+  /** Pre-populated when the user already has a master account (= a live session). */
   existingMaster?: {
     email: string
     name?: string
@@ -20,8 +21,11 @@ interface StepProfileProps {
     age:         number
     gender:      Gender
     statusText:  string
-    /** Only present for first-time users. */
-    email?:      string
+    /** Present only when entering via the email fallback (first-time users). */
+    email?:       string
+    /** Google ID token + raw nonce, exchanged for a session server-side. */
+    googleToken?: string
+    googleNonce?: string
   }) => void
 }
 
@@ -50,7 +54,9 @@ function isValidEmail(value: string): boolean {
 
 export function StepProfile({ selfieUrl, existingMaster, onComplete }: StepProfileProps) {
   const { t } = useI18n()
-  const isFirstTime = !existingMaster
+  // A returning user reaches this step with a live session already (bootstrap
+  // only returns a master profile when authenticated) — no re-auth needed.
+  const isAuthed = !!existingMaster
 
   const [name,       setName]       = useState(existingMaster?.name  ?? '')
   const [age,        setAge]        = useState<number>(existingMaster?.age ?? 25)
@@ -58,24 +64,35 @@ export function StepProfile({ selfieUrl, existingMaster, onComplete }: StepProfi
   const [statusText, setStatusText] = useState('')
   const [email,      setEmail]      = useState('')
   const [emailFocused, setEmailFocused] = useState(false)
+  // First-time users default to Google; flip to the email fallback on demand
+  // (or automatically when Google isn't configured / fails).
+  const [emailMode,  setEmailMode]  = useState(!GOOGLE_ENABLED)
+  const [googleErr,  setGoogleErr]  = useState<string | null>(null)
 
   const wordCount = useMemo(() => countWords(statusText), [statusText])
 
-  const isValid =
+  const profileValid =
     name.trim().length >= 2 &&
     age >= MIN_AGE && age <= MAX_AGE &&
-    wordCount <= MAX_WORDS &&
-    (!isFirstTime || isValidEmail(email))
+    wordCount <= MAX_WORDS
 
-  function submit() {
-    if (!isValid) return
-    onComplete({
-      name:       name.trim(),
-      age,
-      gender,
-      statusText: statusText.trim(),
-      email:      isFirstTime ? email.trim().toLowerCase() : undefined,
-    })
+  // Latest profile fields, read at Google-callback time (fires after an async
+  // popup) so we never submit a stale closure.
+  const latest = useRef({ name, age, gender, statusText })
+  latest.current = { name: name.trim(), age, gender, statusText: statusText.trim() }
+
+  function submitEmail() {
+    if (!profileValid || !isValidEmail(email)) return
+    onComplete({ ...latest.current, email: email.trim().toLowerCase() })
+  }
+
+  function submitAuthed() {
+    if (!profileValid) return
+    onComplete({ ...latest.current })
+  }
+
+  function handleGoogleCredential(token: string, nonce: string) {
+    onComplete({ ...latest.current, googleToken: token, googleNonce: nonce })
   }
 
   function bumpAge(delta: number) {
@@ -112,7 +129,7 @@ export function StepProfile({ selfieUrl, existingMaster, onComplete }: StepProfi
             alt={t('selfie.alt')}
             className="w-24 h-24 rounded-2xl object-cover ring-2 ring-wia-purple/40"
           />
-          <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 border-2 border-wia-bg flex items-center justify-center">
+          <div className="absolute -bottom-1 -end-1 w-6 h-6 rounded-full bg-emerald-500 border-2 border-wia-bg flex items-center justify-center">
             <span className="text-xs">✓</span>
           </div>
         </div>
@@ -237,62 +254,120 @@ export function StepProfile({ selfieUrl, existingMaster, onComplete }: StepProfi
         )}
       </div>
 
-      {/* Email — only shown to first-time users. Saved as their identifier;
-          no verification, no magic link, no tokenization. */}
-      {isFirstTime && (
-        <div className="pt-2 border-t border-wia-ink/10">
-          <label className="block text-sm font-medium text-wia-ink/60 mb-2">
-            {t('profile.email')}
-          </label>
-          <div className="relative">
-            <Mail
-              size={15}
-              className={cn(
-                'absolute start-4 top-1/2 -translate-y-1/2 transition-colors',
-                emailFocused ? 'text-wia-purple' : 'text-wia-ink/55',
+      {/* ── Enter the room ─────────────────────────────────────────────────
+          Three cases:
+          1. Authed (returning user): single "Enter the room" — rides session.
+          2. First-time + Google: One Tap button + "use email instead".
+          3. First-time + email fallback: email field + "Enter the room". */}
+      <div className="pt-2 space-y-3">
+        {isAuthed ? (
+          <button
+            onClick={submitAuthed}
+            disabled={!profileValid}
+            className={cn(
+              'w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-semibold text-lg transition-all',
+              profileValid
+                ? 'bg-gradient-to-r from-wia-purple to-wia-pink text-white hover:opacity-90 shadow-xl shadow-purple-500/20'
+                : 'glass text-wia-ink/50 cursor-not-allowed',
+            )}
+          >
+            {t('profile.enterRoom')}
+            <ArrowRight size={20} className="rtl-mirror" />
+          </button>
+        ) : !emailMode ? (
+          <>
+            {profileValid ? (
+              <GoogleSignInButton
+                onCredential={handleGoogleCredential}
+                onError={() => { setGoogleErr(t('profile.googleFailed')); setEmailMode(true) }}
+              />
+            ) : (
+              <button
+                disabled
+                className="w-full py-4 rounded-2xl font-semibold text-lg glass text-wia-ink/50 cursor-not-allowed"
+              >
+                {t('profile.completeProfile')}
+              </button>
+            )}
+            <button
+              onClick={() => setEmailMode(true)}
+              className="w-full text-center text-xs text-wia-ink/55 underline hover:text-wia-ink transition-colors"
+            >
+              {t('profile.useEmailInstead')}
+            </button>
+          </>
+        ) : (
+          <>
+            {/* Email fallback */}
+            <div className="pt-1">
+              <label className="block text-sm font-medium text-wia-ink/60 mb-2">
+                {t('profile.email')}
+              </label>
+              <div className="relative">
+                <Mail
+                  size={15}
+                  className={cn(
+                    'absolute start-4 top-1/2 -translate-y-1/2 transition-colors',
+                    emailFocused ? 'text-wia-purple' : 'text-wia-ink/55',
+                  )}
+                />
+                <input
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  onFocus={() => setEmailFocused(true)}
+                  onBlur={()  => setEmailFocused(false)}
+                  placeholder="you@email.com"
+                  className="w-full glass-strong rounded-xl ps-11 pe-4 py-3 text-wia-ink placeholder:text-wia-ink/50 outline-none focus:ring-1 focus:ring-wia-purple/50 transition-all"
+                />
+              </div>
+
+              {googleErr && (
+                <div className="mt-2 flex items-center gap-1.5 text-xs text-amber-600">
+                  <AlertCircle size={12} />
+                  {googleErr}
+                </div>
               )}
-            />
-            <input
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              onFocus={() => setEmailFocused(true)}
-              onBlur={()  => setEmailFocused(false)}
-              placeholder="you@email.com"
-              className="w-full glass-strong rounded-xl ps-11 pe-4 py-3 text-wia-ink placeholder:text-wia-ink/50 outline-none focus:ring-1 focus:ring-wia-purple/50 transition-all"
-            />
-          </div>
+              {email.length > 0 && !isValidEmail(email) && (
+                <div className="mt-2 flex items-center gap-1.5 text-xs text-amber-600">
+                  <AlertCircle size={12} />
+                  {t('profile.emailBad')}
+                </div>
+              )}
 
-          {email.length > 0 && !isValidEmail(email) && (
-            <div className="mt-2 flex items-center gap-1.5 text-xs text-amber-600">
-              <AlertCircle size={12} />
-              {t('profile.emailBad')}
+              <p className="mt-2 text-[11px] text-wia-ink/55 leading-relaxed flex items-center gap-1">
+                <Shield size={11} className="text-wia-purple/70" />
+                {t('profile.emailNote')}
+              </p>
             </div>
-          )}
 
-          <p className="mt-2 text-[11px] text-wia-ink/55 leading-relaxed flex items-center gap-1">
-            <Shield size={11} className="text-wia-purple/70" />
-            {t('profile.emailNote')}
-          </p>
-        </div>
-      )}
+            <button
+              onClick={submitEmail}
+              disabled={!profileValid || !isValidEmail(email)}
+              className={cn(
+                'w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-semibold text-lg transition-all',
+                profileValid && isValidEmail(email)
+                  ? 'bg-gradient-to-r from-wia-purple to-wia-pink text-white hover:opacity-90 shadow-xl shadow-purple-500/20'
+                  : 'glass text-wia-ink/50 cursor-not-allowed',
+              )}
+            >
+              {t('profile.enterRoom')}
+              <ArrowRight size={20} className="rtl-mirror" />
+            </button>
 
-      {/* Submit */}
-      <button
-        onClick={submit}
-        disabled={!isValid}
-        className={cn(
-          'w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-semibold text-lg transition-all',
-          isValid
-            ? 'bg-gradient-to-r from-wia-purple to-wia-pink text-white hover:opacity-90 shadow-xl shadow-purple-500/20'
-            : 'glass text-wia-ink/50 cursor-not-allowed',
+            {GOOGLE_ENABLED && (
+              <button
+                onClick={() => { setEmailMode(false); setGoogleErr(null) }}
+                className="w-full text-center text-xs text-wia-ink/55 underline hover:text-wia-ink transition-colors"
+              >
+                {t('profile.useGoogleInstead')}
+              </button>
+            )}
+          </>
         )}
-      >
-        {t('profile.enterRoom')}
-        <ArrowRight size={20} className="rtl-mirror" />
-      </button>
+      </div>
 
       <p className="text-center text-xs text-wia-ink/50">
         {t('profile.footNote')}

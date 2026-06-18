@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, use, useEffect, useCallback } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, use, useEffect } from 'react'
 import Link from 'next/link'
 import {
-  CheckCircle, Camera, User, Sparkles, QrCode, AlertCircle,
+  CheckCircle, Camera, User, Sparkles, AlertCircle,
 } from 'lucide-react'
 import type { JoinStep, Gender, Location } from '@/lib/types'
 import { StepWelcome } from '@/components/join/StepWelcome'
@@ -13,23 +12,7 @@ import { StepProfile } from '@/components/join/StepProfile'
 import { cn } from '@/lib/cn'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { LanguageSelector } from '@/components/LanguageSelector'
-
-import { supabase } from '@/lib/supabase/client'
-import { joinVenue } from '@/lib/api/presence'
-import { uploadSelfie } from '@/lib/api/selfies'
-import { upsertMasterProfile, type MasterProfile } from '@/lib/api/master-profile'
-
-const PENDING_KEY = 'wia:pending_join'
-
-interface PendingJoin {
-  slug:       string
-  name:       string
-  age:        number
-  gender:     Gender
-  statusText: string
-  selfieUrl:  string         // either data URL (pre-upload) or Storage URL
-  email:      string
-}
+import { type MasterProfile } from '@/lib/api/master-profile'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -87,8 +70,6 @@ const STEPS: { key: JoinStep; icon: typeof Camera; labelKey: string }[] = [
 export default function JoinPage({ params }: Props) {
   const { t } = useI18n()
   const { slug } = use(params)
-  const router = useRouter()
-  const searchParams = useSearchParams()
 
   const [venue,        setVenue]        = useState<Location | null>(null)
   const [liveCount,    setLiveCount]    = useState(0)
@@ -129,102 +110,53 @@ export default function JoinPage({ params }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug])
 
-  const finishJoin = useCallback(async (
-    v: Location,
-    _profile: MasterProfile | null,
-    pending: PendingJoin,
-  ) => {
-    let stage = 'init'
-    try {
-      // Verify the session is actually set before doing anything that needs auth
-      stage = 'auth_check'
-      const { data: userData, error: userErr } = await supabase().auth.getUser()
-      if (userErr || !userData?.user) {
-        throw new Error(`Auth missing after sign-in: ${userErr?.message ?? 'no user'}`)
-      }
-      console.log('[join] authed as', userData.user.id)
-
-      // 1. Upload selfie if needed
-      let selfieUrl = pending.selfieUrl
-      if (selfieUrl.startsWith('data:')) {
-        stage = 'selfie_upload'
-        console.log('[join] uploading selfie...')
-        selfieUrl = await uploadSelfie(selfieUrl, v.slug)
-        console.log('[join] selfie uploaded:', selfieUrl)
-      }
-
-      // 2. Save master profile
-      stage = 'master_profile'
-      console.log('[join] upserting master profile...')
-      await upsertMasterProfile({
-        name:   pending.name,
-        age:    pending.age,
-        gender: pending.gender,
-      })
-      console.log('[join] master profile saved')
-
-      // 3. Create presence
-      stage = 'presence_insert'
-      console.log('[join] joining venue...')
-      await joinVenue({
-        venueId:    v.id,
-        name:       pending.name,
-        age:        pending.age,
-        gender:     pending.gender,
-        statusText: pending.statusText,
-        selfieUrl,
-      })
-      console.log('[join] presence created')
-
-      // 4. Navigate to the room
-      stage = 'navigate'
-      localStorage.removeItem(PENDING_KEY)
-      router.replace(`/${v.slug}`)
-    } catch (e) {
-      console.error(`[join] failed at stage=${stage}`, e)
-      const msg = e instanceof Error ? e.message : 'Failed to enter the room'
-      setSubmitError(`[${stage}] ${msg}`)
-      setStep('profile')
-    }
-  }, [router])
-
   function handleSelfie(dataUrl: string) {
     setSelfieData(dataUrl)
     setStep('profile')
   }
 
+  // Final submit. Auth has already happened by now — either the guest carries a
+  // live session (returning user, or just completed Google One Tap), in which
+  // case `/api/join` rides the cookie; or they used the email fallback and we
+  // pass `email` so the server provisions/looks up the account.
   async function handleProfile(profile: {
-    name:       string
-    age:        number
-    gender:     Gender
-    statusText: string
-    email?:     string
+    name:        string
+    age:         number
+    gender:      Gender
+    statusText:  string
+    email?:      string
+    googleToken?: string
+    googleNonce?: string
   }) {
     if (!venue) return
     setSubmitError(null)
     setStep('entering')
 
     try {
-      const email = profile.email ?? master?.email ?? ''
-      if (!email) throw new Error('Email is required to enter the room')
+      const body: Record<string, unknown> = {
+        name:          profile.name,
+        age:           profile.age,
+        gender:        profile.gender,
+        statusText:    profile.statusText,
+        selfieDataUrl: selfieData,
+        venueSlug:     slug,
+      }
+      // Google One Tap → server exchanges the id token for a session.
+      // Email → server provisions/looks up the account. Returning users (live
+      // session) need neither — the server reads their cookie.
+      if (profile.googleToken) {
+        body.googleToken = profile.googleToken
+        body.googleNonce = profile.googleNonce
+      } else if (profile.email) {
+        body.email = profile.email
+      }
 
-      // Single atomic call — server creates user, signs in (sets cookie),
-      // uploads selfie, writes master_profile + presence. Returns when all
-      // five steps succeed. The browser then just navigates.
       console.log('[join] POST /api/join...')
       const res = await fetch('/api/join', {
         method:      'POST',
         headers:     { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({
-          email,
-          name:          profile.name,
-          age:           profile.age,
-          gender:        profile.gender,
-          statusText:    profile.statusText,
-          selfieDataUrl: selfieData,
-          venueSlug:     slug,
-        }),
+        body:        JSON.stringify(body),
       })
 
       if (!res.ok) {
@@ -233,7 +165,6 @@ export default function JoinPage({ params }: Props) {
       }
       console.log('[join] /api/join succeeded — navigating to room')
 
-      localStorage.removeItem(PENDING_KEY)
       // Hard navigate so the room page loads with the freshly-set auth cookie
       window.location.assign(`/${slug}`)
     } catch (e) {

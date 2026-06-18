@@ -18,7 +18,9 @@ export const maxDuration = 30  // seconds — selfie uploads can be slow on flak
 const ADMIN_EMAILS = new Set(['ofekbaram5@gmail.com', 'admin@wia.com'])
 
 interface Body {
-  email:        string
+  email?:       string   // only on the email-fallback path
+  googleToken?: string   // Google One Tap id token — exchanged for a session here
+  googleNonce?: string
   name:         string
   age:          number
   gender:       string
@@ -36,17 +38,7 @@ export async function POST(req: Request) {
   let stage = 'parse'
   try {
     const body = await req.json() as Body
-    const email = String(body.email ?? '').trim().toLowerCase()
 
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
-      return NextResponse.json({ error: 'A valid email is required' }, { status: 400 })
-    }
-    if (ADMIN_EMAILS.has(email)) {
-      return NextResponse.json(
-        { error: 'This email is reserved for admin. Use the admin login page.' },
-        { status: 403 },
-      )
-    }
     if (!body.name || !body.age || !body.gender || !body.venueSlug) {
       return NextResponse.json({ error: 'Missing required profile fields' }, { status: 400 })
     }
@@ -55,6 +47,94 @@ export async function POST(req: Request) {
     }
 
     const admin = adminClient()
+
+    // ── Resolve the acting user ──────────────────────────────────────
+    // Preferred path: the guest already carries a session (Google One Tap, or
+    // a returning user) — we just use it, no provisioning needed. Fallback
+    // path: a first-time guest sent an email, so we look up / create a
+    // passwordless account and sign them in via the SSR cookie client.
+    stage = 'auth'
+    const ssr = await serverClient()
+    let userId: string | null = null
+
+    if (body.googleToken) {
+      // Google One Tap — exchange the id token for a Supabase session. The
+      // Set-Cookie rides this JSON response, so the room loads authenticated.
+      stage = 'google_signin'
+      const { data: gData, error: gErr } = await ssr.auth.signInWithIdToken({
+        provider: 'google',
+        token:    body.googleToken,
+        nonce:    body.googleNonce,
+      })
+      if (gErr || !gData.user) {
+        return NextResponse.json(
+          { error: `google sign-in failed: ${gErr?.message ?? 'no user'}` },
+          { status: 401 },
+        )
+      }
+      userId = gData.user.id
+    } else {
+      // Returning user — reuse the existing session cookie if present.
+      const { data: sessionData } = await ssr.auth.getUser()
+      userId = sessionData.user?.id ?? null
+    }
+
+    if (!userId) {
+      const email = String(body.email ?? '').trim().toLowerCase()
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+        return NextResponse.json({ error: 'A valid email is required' }, { status: 400 })
+      }
+      if (ADMIN_EMAILS.has(email)) {
+        return NextResponse.json(
+          { error: 'This email is reserved for admin. Use the admin login page.' },
+          { status: 403 },
+        )
+      }
+
+      stage = 'find_or_create_user'
+      const password = `wia_${randomHex(16)}_${randomHex(16)}`
+
+      for (let page = 1; page <= 50 && !userId; page++) {
+        const { data: list, error: listErr } = await admin.auth.admin.listUsers({ page, perPage: 200 })
+        if (listErr) {
+          return NextResponse.json({ error: `listUsers failed: ${listErr.message}` }, { status: 500 })
+        }
+        const found = list.users.find(u => u.email?.toLowerCase() === email)
+        if (found) { userId = found.id; break }
+        if (list.users.length < 200) break
+      }
+
+      if (userId) {
+        const { error: updErr } = await admin.auth.admin.updateUserById(userId, {
+          password, email_confirm: true,
+        })
+        if (updErr) {
+          return NextResponse.json({ error: `password update failed: ${updErr.message}` }, { status: 500 })
+        }
+      } else {
+        const { data: createData, error: createErr } = await admin.auth.admin.createUser({
+          email, password, email_confirm: true,
+        })
+        if (createErr || !createData?.user) {
+          return NextResponse.json(
+            { error: createErr?.message ?? 'createUser failed' },
+            { status: 500 },
+          )
+        }
+        userId = createData.user.id
+      }
+
+      // Sign in via SSR cookie client (writes Set-Cookie to response)
+      stage = 'signin'
+      const { error: signInErr } = await ssr.auth.signInWithPassword({ email, password })
+      if (signInErr) {
+        return NextResponse.json({ error: `signin failed: ${signInErr.message}` }, { status: 500 })
+      }
+    }
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Could not resolve a user' }, { status: 500 })
+    }
 
     // ── Look up venue ────────────────────────────────────────────────
     stage = 'venue_lookup'
@@ -65,50 +145,6 @@ export async function POST(req: Request) {
       .maybeSingle()
     if (venueErr || !venue) {
       return NextResponse.json({ error: 'Venue not found' }, { status: 404 })
-    }
-
-    // ── Find or create user ──────────────────────────────────────────
-    stage = 'find_or_create_user'
-    const password = `wia_${randomHex(16)}_${randomHex(16)}`
-    let userId: string | null = null
-
-    for (let page = 1; page <= 50 && !userId; page++) {
-      const { data: list, error: listErr } = await admin.auth.admin.listUsers({ page, perPage: 200 })
-      if (listErr) {
-        return NextResponse.json({ error: `listUsers failed: ${listErr.message}` }, { status: 500 })
-      }
-      const found = list.users.find(u => u.email?.toLowerCase() === email)
-      if (found) { userId = found.id; break }
-      if (list.users.length < 200) break
-    }
-
-    if (userId) {
-      const { error: updErr } = await admin.auth.admin.updateUserById(userId, {
-        password,
-        email_confirm: true,
-      })
-      if (updErr) {
-        return NextResponse.json({ error: `password update failed: ${updErr.message}` }, { status: 500 })
-      }
-    } else {
-      const { data: createData, error: createErr } = await admin.auth.admin.createUser({
-        email, password, email_confirm: true,
-      })
-      if (createErr || !createData?.user) {
-        return NextResponse.json(
-          { error: createErr?.message ?? 'createUser failed' },
-          { status: 500 },
-        )
-      }
-      userId = createData.user.id
-    }
-
-    // ── Sign in via SSR cookie client (writes Set-Cookie to response) ──
-    stage = 'signin'
-    const ssr = await serverClient()
-    const { error: signInErr } = await ssr.auth.signInWithPassword({ email, password })
-    if (signInErr) {
-      return NextResponse.json({ error: `signin failed: ${signInErr.message}` }, { status: 500 })
     }
 
     // ── Upload selfie via admin (bypass RLS — path enforces ownership) ─
