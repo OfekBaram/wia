@@ -14,7 +14,7 @@
 // At the end everyone leaves. Reports success rates + latency percentiles.
 
 const BASE     = process.env.BASE_URL   ?? 'https://wia-orcin.vercel.app'
-const SLUG     = process.env.VENUE_SLUG ?? 'ofeks-house'
+const SLUG     = process.env.VENUE_SLUG ?? 'beeri'
 const USERS    = Number(process.env.USERS    ?? 25)
 const DURATION = Number(process.env.DURATION ?? 60) // seconds of steady-state
 const JOIN_CONCURRENCY = Number(process.env.JOIN_CONCURRENCY ?? 10)

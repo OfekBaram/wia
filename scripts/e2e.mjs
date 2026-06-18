@@ -11,7 +11,7 @@
 // All data is soft-deleted by the leave step; test emails are clearly marked.
 
 const BASE  = process.env.BASE_URL   ?? 'https://wia-orcin.vercel.app'
-const SLUG  = process.env.VENUE_SLUG ?? 'ofeks-house'
+const SLUG  = process.env.VENUE_SLUG ?? 'beeri'
 
 // 1x1 transparent PNG
 const SELFIE =
