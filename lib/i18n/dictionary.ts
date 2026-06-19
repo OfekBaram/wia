@@ -468,7 +468,7 @@ export const dict: Record<Locale, Tree> = {
     },
     profile: {
       title:      'הגדירו את הפרופיל הזמני שלכם',
-      sub:        'זה הפרופיל הזמני שלכם כאן. היא נעלמת כשאתם עוזבים.',
+      sub:        'זה הפרופיל הזמני שלכם כאן. הוא נמחק כשאתם עוזבים.',
       name:       'השם שלכם',
       namePh:     'למשל נועה, יואב, דנה...',
       age:        'גיל',
@@ -587,7 +587,7 @@ export const dict: Record<Locale, Tree> = {
     },
     adminNav: {
       admin: 'אדמין', venue: 'מקום', dashboard: 'דשבורד', newVenue: 'מקום חדש', analytics: 'אנליטיקס',
-      viewPublic: 'לאתר הציבורי →', roleAdmin: 'אדמין', roleOwner: 'בעל/ת מקום', signOut: 'התנתקות',
+      viewPublic: 'לאתר הראשי של WIA →', roleAdmin: 'אדמין', roleOwner: 'בעל/ת מקום', signOut: 'התנתקות',
     },
     login: {
       signupTitle: 'הביאו את WIA למקום שלכם', signinTitle: 'אזור הניהול',
@@ -660,11 +660,11 @@ export const dict: Record<Locale, Tree> = {
       notYoursTitle: 'זה לא המקום שלך', notYoursBody: 'המקום הזה שייך לחשבון אחר. אפשר לצפות רק במקומות שבבעלותכם.',
       notFound: 'המקום לא נמצא',
       liveTitle: 'המקום שלכם חי', liveBody: 'הדפיסו את קוד ה-QR למטה והניחו אותו על השולחנות. אורחים סורקים כדי להיכנס.',
-      viewPublic: 'תצוגה ציבורית', deleteVenue: 'מחיקת מקום',
+      viewPublic: 'תצוגת דף העסק', deleteVenue: 'מחיקת מקום',
       tabOverview: 'סקירה', tabAnalytics: 'אנליטיקס',
       coverImage: 'תמונת נושא', changePhoto: 'החלפת תמונה', uploadCover: 'לחצו כדי להעלות תמונת נושא',
       coverHint: 'מוצגת כבאנר בחדר כשאורחים סורקים להיכנס.', coverAlt: 'נושא',
-      venueLink: 'קישור המקום', publicRoomUrl: 'כתובת החדר הציבורית', qrEncodedUrl: 'הכתובת בקוד ה-QR',
+      venueLink: 'קישור המקום', publicRoomUrl: 'כתובת החדר', qrEncodedUrl: 'הכתובת בקוד ה-QR',
       qrTokenNotePre: 'זו הכתובת שאליה מצביע קוד ה-QR. הטוקן ', qrTokenNotePost: ' פותח את תהליך ההצטרפות.',
       locationGeofence: 'מיקום וגדר וירטואלית', geofenceRadius: 'רדיוס גדר וירטואלית', viewOnMap: 'הצגת המקום במפה',
       liveActivity: 'פעילות חיה', hereNow: 'כאן עכשיו', peakToday: 'שיא היום', avgStay: 'שהייה ממוצעת',
