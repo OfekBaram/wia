@@ -510,9 +510,9 @@ export const dict: Record<Locale, Tree> = {
       desktopSteps:   'לחצו על אייקון המנעול ליד שורת הכתובת\nמצאו "Location" והגדירו ל-"Allow"\nרעננו את העמוד אם תתבקשו',
     },
     vibe: {
-      hereNow: 'כאן עכשיו', ageRange: 'טווח גילאים', mix: 'תמהיל',
+      hereNow: 'כאן עכשיו', ageRange: 'טווח גילאים', mix: 'מיקס',
       steady: 'יציב', justArrived: '+{count} הרגע הגיעו',
-      avg: 'ממוצע {age}', genderMix: 'תמהיל מגדרי',
+      avg: 'ממוצע {age}', genderMix: 'מיקס נשים/ גברים',
       w: 'נ', m: 'ג', nb: 'ל״ב',
     },
     room: {
