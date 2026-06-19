@@ -40,12 +40,27 @@ export function VibeBar({ presence }: VibeBarProps) {
     {
       icon:  UserCircle,
       label: t('vibe.mix'),
-      value:
-        `${genderCounts.woman ?? 0}${t('vibe.w')} · ${genderCounts.man ?? 0}${t('vibe.m')}${
-          genderCounts['non-binary']
-            ? ` · ${genderCounts['non-binary']}${t('vibe.nb')}`
-            : ''
-        }`,
+      // Gender shown as symbols (♀ ♂ ⚧) rather than letters — matches the
+      // gender icons used on the profile step.
+      value: (
+        <span className="inline-flex items-baseline gap-1.5">
+          <span className="inline-flex items-baseline gap-0.5">
+            {genderCounts.woman ?? 0}<span className="text-wia-pink">♀</span>
+          </span>
+          <span className="text-wia-ink/25">·</span>
+          <span className="inline-flex items-baseline gap-0.5">
+            {genderCounts.man ?? 0}<span className="text-wia-cyan">♂</span>
+          </span>
+          {genderCounts['non-binary'] ? (
+            <>
+              <span className="text-wia-ink/25">·</span>
+              <span className="inline-flex items-baseline gap-0.5">
+                {genderCounts['non-binary']}<span className="text-wia-ink/50">⚧</span>
+              </span>
+            </>
+          ) : null}
+        </span>
+      ),
       sub: t('vibe.genderMix'),
       color: 'text-wia-pink',
     },
