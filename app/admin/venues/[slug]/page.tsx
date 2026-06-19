@@ -228,6 +228,7 @@ export default function AdminVenuePage({ params }: Props) {
             <ExternalLink size={14} />
             {t("venueDetail.viewPublic")}
           </Link>
+          {isSuperAdmin && (
           <button
             onClick={handleDelete}
             className="p-2 rounded-xl glass border border-wia-ink/15 hover:bg-red-500/10 hover:border-red-500/30 text-white hover:text-red-300 transition-all"
@@ -235,6 +236,7 @@ export default function AdminVenuePage({ params }: Props) {
           >
             <Trash2 size={14} />
           </button>
+        )}
         </div>
       </div>
 
