@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Plus, ArrowRight, QrCode, Sparkles, Trash2, Mail } from 'lucide-react'
 import { VENUE_EMOJI } from '@/lib/mock-data'
@@ -95,6 +96,7 @@ function Row({ venue, onDelete }: { venue: VenueRow; onDelete?: (slug: string) =
 
 export default function AdminDashboard() {
   const { t } = useI18n()
+  const router = useRouter()
   const { isSuperAdmin, isVenueOwner } = useAdminRole()
 
   const [venues,  setVenues]  = useState<VenueRow[]>([])
@@ -107,21 +109,38 @@ export default function AdminDashboard() {
         const res = await fetch('/api/admin/venues/list', { credentials: 'include', cache: 'no-store' })
         if (res.status === 401) { window.location.assign('/admin/login'); return }
         if (!res.ok) {
-          if (!cancelled) setVenues([])
+          if (!cancelled) { setVenues([]); setLoading(false) }
           return
         }
-        const { venues: list } = await res.json()
-        if (!cancelled) setVenues(list ?? [])
-      } finally {
-        if (!cancelled) setLoading(false)
+        const { role, venues: list } = await res.json()
+        // A venue owner is capped at one venue — skip this list page and send
+        // them straight to it. Owners with no venue yet, and super admins, stay
+        // here (create-venue prompt / full all-venues list respectively).
+        if (role === 'venue_owner' && Array.isArray(list) && list.length === 1) {
+          router.replace(`/admin/venues/${list[0].slug}`)
+          return // leave `loading` true so the spinner holds through navigation
+        }
+        if (!cancelled) { setVenues(list ?? []); setLoading(false) }
+      } catch {
+        if (!cancelled) { setVenues([]); setLoading(false) }
       }
     }
     load()
     return () => { cancelled = true }
-  }, [])
+  }, [router])
 
   const totalLive = venues.reduce((sum, v) => sum + v.liveCount, 0)
   const hasVenue  = venues.length > 0
+
+  // Hold a clean spinner until we've decided whether to render or redirect —
+  // keeps a venue owner from ever flashing this in-between list page.
+  if (loading) {
+    return (
+      <div className="py-24 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-wia-purple/30 border-t-wia-purple animate-spin" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-8">
@@ -159,7 +178,7 @@ export default function AdminDashboard() {
             color="text-wia-purple"
           />
           <StatTile label={t('dash.peopleLiveNow')} value={totalLive} sub={t('dash.acrossVenues')} color="text-wia-green" />
-          {isSuperAdmin && <StatTile label={t('dash.status')} value={loading ? '…' : 'OK'} sub={t('dash.supaConnected')} color="text-wia-cyan" />}
+          {isSuperAdmin && <StatTile label={t('dash.status')} value="OK" sub={t('dash.supaConnected')} color="text-wia-cyan" />}
         </div>
       )}
 
@@ -173,13 +192,7 @@ export default function AdminDashboard() {
           )}
         </div>
 
-        {loading && (
-          <div className="py-12 flex items-center justify-center">
-            <div className="w-8 h-8 rounded-full border-2 border-wia-purple/30 border-t-wia-purple animate-spin" />
-          </div>
-        )}
-
-        {!loading && !hasVenue && (
+        {!hasVenue && (
           <GlassCard className="p-8 text-center border-dashed border-wia-ink/15">
             <div className="inline-flex w-12 h-12 rounded-2xl bg-wia-purple/10 border border-wia-purple/30 mb-3 items-center justify-center">
               {isVenueOwner ? <Sparkles size={20} className="text-wia-purple" /> : <QrCode size={20} className="text-wia-purple" />}
@@ -200,7 +213,7 @@ export default function AdminDashboard() {
           </GlassCard>
         )}
 
-        {!loading && hasVenue && (
+        {hasVenue && (
           <div className="space-y-2">
             {venues.map(v => (
               <Row
