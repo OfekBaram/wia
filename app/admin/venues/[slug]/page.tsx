@@ -13,11 +13,13 @@ import { GlassCard } from '@/components/ui/GlassCard'
 import { LiveBadge } from '@/components/ui/LiveBadge'
 import { QRCodePoster } from '@/components/admin/QRCodePoster'
 import { useI18n } from '@/lib/i18n/I18nProvider'
+import { useAdminRole } from '@/lib/hooks/useAdminRole'
 
 interface Props { params: Promise<{ slug: string }> }
 
 export default function AdminVenuePage({ params }: Props) {
   const { t } = useI18n()
+  const { isSuperAdmin } = useAdminRole()
   const { slug } = use(params)
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -180,13 +182,16 @@ export default function AdminVenuePage({ params }: Props) {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      <Link
-        href="/admin"
-        className="inline-flex items-center gap-1.5 text-sm text-wia-ink/50 hover:text-wia-ink transition-colors"
-      >
-        <ArrowLeft size={14} className="rtl-mirror" />
-        {t("venueDetail.back")}
-      </Link>
+      {/* Owners have no list to go back to — only super admins see this. */}
+      {isSuperAdmin && (
+        <Link
+          href="/admin"
+          className="inline-flex items-center gap-1.5 text-sm text-wia-ink/50 hover:text-wia-ink transition-colors"
+        >
+          <ArrowLeft size={14} className="rtl-mirror" />
+          {t("venueDetail.back")}
+        </Link>
+      )}
 
       {justCreated && (
         <GlassCard className="p-4 border border-emerald-500/30 bg-emerald-500/5 flex items-start gap-3">

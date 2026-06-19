@@ -13,11 +13,15 @@ export function AdminNav() {
   const { me } = useAdminRole()
   const superAdmin = me?.role === 'super_admin'
 
-  const links = [
-    { href: '/admin', labelKey: 'adminNav.dashboard', icon: LayoutDashboard },
-    ...(superAdmin ? [{ href: '/admin/venues/new', labelKey: 'adminNav.newVenue',  icon: Plus      }] : []),
-    ...(superAdmin ? [{ href: '/admin/analytics',  labelKey: 'adminNav.analytics', icon: BarChart2 }] : []),
-  ]
+  // Venue owners land directly on their single venue, so the dashboard list
+  // (and the links that only make sense there) are super-admin only.
+  const links = superAdmin
+    ? [
+        { href: '/admin',             labelKey: 'adminNav.dashboard', icon: LayoutDashboard },
+        { href: '/admin/venues/new',  labelKey: 'adminNav.newVenue',  icon: Plus      },
+        { href: '/admin/analytics',   labelKey: 'adminNav.analytics', icon: BarChart2 },
+      ]
+    : []
 
   return (
     <header className="sticky top-0 z-40 border-b border-wia-ink/10 glass-strong">
