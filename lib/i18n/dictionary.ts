@@ -157,6 +157,11 @@ export const dict: Record<Locale, Tree> = {
       emailBad:   "That doesn't look like a valid email",
       emailNote:  'Saved as your WIA identity across every venue. Never shared, never spam.',
       enterRoom:  'Enter the room',
+      continueGoogle:   'Continue with Google',
+      useEmailInstead:  'Prefer email? Use email instead',
+      useGoogleInstead: 'Use Google instead',
+      completeProfile:  'Fill in your details to continue',
+      googleFailed:     "Google sign-in didn't work — enter your email instead.",
       footNote:   'Your presence at this venue expires when you leave. No permanent social media — just this moment.',
     },
     locHelp: {
@@ -484,6 +489,11 @@ export const dict: Record<Locale, Tree> = {
       emailBad:   'זה לא נראה כמו אימייל תקין',
       emailNote:  'נשמר כזהות ה-WIA שלכם בכל מקום. לא משותף עם אף אחד, בלי ספאם.',
       enterRoom:  'כניסה לחדר',
+      continueGoogle:   'המשך עם Google',
+      useEmailInstead:  'מעדיפים אימייל? היכנסו עם אימייל',
+      useGoogleInstead: 'היכנסו עם Google',
+      completeProfile:  'מלאו את הפרטים כדי להמשיך',
+      googleFailed:     'הכניסה עם Google נכשלה — הזינו אימייל במקום.',
       footNote:   'הנוכחות שלכם במקום הזה פגה כשאתם עוזבים. בלי רשת חברתית קבועה — רק הרגע הזה.',
     },
     locHelp: {
