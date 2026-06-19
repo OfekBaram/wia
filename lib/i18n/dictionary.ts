@@ -586,8 +586,8 @@ export const dict: Record<Locale, Tree> = {
       geofenced: 'יצאתם מ-{venue} — התנתקתם מהחדר. סרקו שוב את ה-QR כדי לחזור.',
     },
     adminNav: {
-      admin: 'אדמין', venue: 'מקום', dashboard: 'דשבורד', newVenue: 'מקום חדש', analytics: 'אנליטיקס',
-      viewPublic: 'לאתר הראשי של WIA →', roleAdmin: 'אדמין', roleOwner: 'בעל/ת מקום', signOut: 'התנתקות',
+      admin: 'אדמין', venue: 'בית עסק', dashboard: 'דשבורד', newVenue: 'בית עסק חדש', analytics: 'אנליטיקס',
+      viewPublic: 'לאתר הראשי של WIA →', roleAdmin: 'אדמין', roleOwner: 'בעל/ת עסק', signOut: 'התנתקות',
     },
     login: {
       signupTitle: 'הביאו את WIA למקום שלכם', signinTitle: 'אזור הניהול',
