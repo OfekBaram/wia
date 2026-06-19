@@ -32,8 +32,6 @@ interface StepProfileProps {
 const GENDERS: { value: Gender; labelKey: string; icon: string }[] = [
   { value: 'woman',        labelKey: 'profile.gWoman',       icon: '♀' },
   { value: 'man',          labelKey: 'profile.gMan',         icon: '♂' },
-  { value: 'non-binary',   labelKey: 'profile.gNonBinary',   icon: '⚧' },
-  { value: 'unspecified',  labelKey: 'profile.gUnspecified', icon: '·' },
 ]
 
 const MIN_AGE     = 18
