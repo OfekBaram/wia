@@ -38,6 +38,19 @@ export async function GET() {
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+  const isSuper = roleRow.role === 'super_admin'
+
+  // Super admin only: resolve each venue owner's email from auth.users.
+  // (Owners viewing their own list don't need to see their own address back.)
+  const ownerEmails: Record<string, string | null> = {}
+  if (isSuper) {
+    const ownerIds = [...new Set((data ?? []).map(v => v.owner_id).filter(Boolean))] as string[]
+    await Promise.all(ownerIds.map(async (id) => {
+      const { data: u } = await admin.auth.admin.getUserById(id)
+      ownerEmails[id] = u?.user?.email ?? null
+    }))
+  }
+
   // Live counts via the existing count function — same admin client
   const venues = await Promise.all(
     (data ?? []).map(async (v) => {
@@ -59,6 +72,8 @@ export async function GET() {
         isPremium:    v.is_premium,
         liveCount:    count ?? 0,
         createdAt:    v.created_at,
+        // Only present for super admins; null when the venue has no owner.
+        ownerEmail:   isSuper ? (v.owner_id ? ownerEmails[v.owner_id] ?? null : null) : undefined,
       }
     }),
   )

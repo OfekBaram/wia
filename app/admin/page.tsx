@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Plus, ArrowRight, QrCode, Sparkles, Trash2 } from 'lucide-react'
+import { Plus, ArrowRight, QrCode, Sparkles, Trash2, Mail } from 'lucide-react'
 import { VENUE_EMOJI } from '@/lib/mock-data'
 import type { Location } from '@/lib/types'
 import { LiveBadge } from '@/components/ui/LiveBadge'
@@ -22,6 +22,8 @@ interface VenueRow {
   isPremium:    boolean
   liveCount:    number
   createdAt:    string
+  /** Owner's email — only sent to super admins. */
+  ownerEmail?:  string | null
 }
 
 function StatTile({
@@ -65,6 +67,12 @@ function Row({ venue, onDelete }: { venue: VenueRow; onDelete?: (slug: string) =
             </span>
           </div>
           <div className="text-xs text-wia-ink/60 font-mono truncate">wia.com/{venue.slug}</div>
+          {venue.ownerEmail && (
+            <div className="mt-1 flex items-center gap-1.5 text-xs text-wia-ink/55 truncate">
+              <Mail size={11} className="shrink-0 text-wia-ink/40" />
+              <span className="truncate">{venue.ownerEmail}</span>
+            </div>
+          )}
         </div>
         <div className="hidden sm:flex items-center gap-4">
           <LiveBadge count={venue.liveCount} size="sm" />
