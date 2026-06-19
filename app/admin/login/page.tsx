@@ -30,7 +30,7 @@ export default function AdminLoginPage() {
       .then(r => (r.ok ? r.json() : null))
       .then(me => {
         if (me && (me.role === 'super_admin' || me.role === 'venue_owner')) {
-          window.location.assign('/admin') // keep the spinner up through navigation
+          window.location.assign('/admin/go') // keep the spinner up through navigation
         } else {
           setCheckingSession(false)
         }
@@ -52,7 +52,7 @@ export default function AdminLoginPage() {
         password,
       })
       if (error) throw error
-      router.push('/admin')
+      router.push('/admin/go')
     } catch (e) {
       setError(e instanceof Error ? e.message : t('login.errSignin'))
     } finally {
@@ -94,7 +94,7 @@ export default function AdminLoginPage() {
       })
       if (signInErr) throw signInErr
 
-      router.push('/admin')
+      router.push('/admin/go')
     } catch (e) {
       setError(e instanceof Error ? e.message : t('login.errSignup'))
     } finally {

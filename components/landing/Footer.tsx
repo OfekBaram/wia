@@ -23,7 +23,7 @@ export function Footer() {
             <Link href="/privacy" className="hover:text-wia-ink/60 transition-colors">{t('footer.privacy')}</Link>
             <Link href="/terms" className="hover:text-wia-ink/60 transition-colors">{t('footer.terms')}</Link>
             <Link href="/safety" className="hover:text-wia-ink/60 transition-colors">{t('footer.safety')}</Link>
-            <Link href="/admin/login" className="hover:text-wia-ink/60 transition-colors">{t('footer.venueAdmin')}</Link>
+            <Link href="/admin/go" className="hover:text-wia-ink/60 transition-colors">{t('footer.venueAdmin')}</Link>
           </div>
 
           <div className="text-xs text-wia-ink/50">

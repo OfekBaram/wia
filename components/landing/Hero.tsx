@@ -101,7 +101,7 @@ export function Hero() {
 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 <Link
-                  href="/admin/login"
+                  href="/admin/go"
                   className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-wia-purple to-wia-pink text-white font-semibold hover:opacity-90 transition-all shadow-xl shadow-purple-500/30"
                 >
                   {t('hero.ctaPrimary')}
