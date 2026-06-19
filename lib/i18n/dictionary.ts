@@ -661,7 +661,7 @@ export const dict: Record<Locale, Tree> = {
       notFound: 'המקום לא נמצא',
       liveTitle: 'המקום שלכם חי', liveBody: 'הדפיסו את קוד ה-QR למטה והניחו אותו על השולחנות. אורחים סורקים כדי להיכנס.',
       viewPublic: 'תצוגת דף העסק', deleteVenue: 'מחיקת מקום',
-      tabOverview: 'סקירה', tabAnalytics: 'אנליטיקס',
+      tabOverview: 'הגדרות', tabAnalytics: 'נתונים',
       coverImage: 'תמונת נושא', changePhoto: 'החלפת תמונה', uploadCover: 'לחצו כדי להעלות תמונת נושא',
       coverHint: 'מוצגת כבאנר בחדר כשאורחים סורקים להיכנס.', coverAlt: 'נושא',
       venueLink: 'קישור המקום', publicRoomUrl: 'כתובת החדר', qrEncodedUrl: 'הכתובת בקוד ה-QR',
