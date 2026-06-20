@@ -14,6 +14,13 @@ interface UseGeofenceOpts {
   onExit?:        () => void
   /** How many consecutive out-of-bound readings before triggering exit. Default 3. */
   exitThreshold?: number
+  /**
+   * Don't request location for this many ms after entering the room. The user
+   * just passed the geofence at the entrance, so re-requesting immediately is
+   * redundant — and on iOS Safari (a fresh page load after the join redirect)
+   * it triggers a second permission prompt right as they land. Default 90s.
+   */
+  graceMs?:       number
 }
 
 export type GeofenceStatus =
@@ -37,6 +44,7 @@ export function useGeofence({
   gracMeters     = 50,
   onExit,
   exitThreshold = 3,
+  graceMs       = 90_000,
 }: UseGeofenceOpts) {
   const [status,    setStatus]    = useState<GeofenceStatus>('idle')
   const [distance,  setDistance]  = useState<number | null>(null)
@@ -47,7 +55,10 @@ export function useGeofence({
     let outsideCount = 0
     let firedExit    = false
     let cancelled    = false
-    const limit = radiusMeters + gracMeters
+    const limit     = radiusMeters + gracMeters
+    const startedAt = Date.now()
+    // Trust the entrance geofence check during the grace window.
+    setStatus('inside')
 
     // Use getCurrentPosition polling instead of watchPosition.
     // iOS Safari treats watchPosition as a separate (more invasive) permission
@@ -55,6 +66,8 @@ export function useGeofence({
     // in the join flow. Polling every 30s reuses the already-granted permission.
     function check() {
       if (cancelled) return
+      // Skip while inside the grace window — no location request, no iOS re-prompt.
+      if (Date.now() - startedAt < graceMs) return
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           if (cancelled) return
@@ -86,7 +99,7 @@ export function useGeofence({
     const id = setInterval(check, 30_000)
     return () => { cancelled = true; clearInterval(id) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, venue.lat, venue.lng, radiusMeters, gracMeters, exitThreshold])
+  }, [enabled, venue.lat, venue.lng, radiusMeters, gracMeters, exitThreshold, graceMs])
 
   return { status, distanceMeters: distance }
 }
