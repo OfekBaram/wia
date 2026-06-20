@@ -341,6 +341,9 @@ export const dict: Record<Locale, Tree> = {
       changePassword: 'Change password', newPassword: 'New password', passwordPh: 'Minimum 8 characters',
       updating: 'Updating…', updatePassword: 'Update password', pwMin: 'Minimum 8 characters', pwFailed: 'Failed', pwUpdated: '✓ Password updated',
       tableQr: 'Table QR code', tableQrSub: 'Print and place on every table. Guests must scan to enter the room.',
+      tabVisitors: 'Visitors',
+      visName: 'Name', visDate: 'Visit date', visEmail: 'Email', visAge: 'Age', visGender: 'Gender',
+      visEmpty: 'No visitors yet.', visCantLoad: 'Could not load the visitors list.', visCount: '{count} visitors',
     },
   },
 
@@ -673,6 +676,9 @@ export const dict: Record<Locale, Tree> = {
       changePassword: 'שינוי סיסמה', newPassword: 'סיסמה חדשה', passwordPh: 'מינימום 8 תווים',
       updating: 'מעדכנים…', updatePassword: 'עדכון סיסמה', pwMin: 'מינימום 8 תווים', pwFailed: 'נכשל', pwUpdated: '✓ הסיסמה עודכנה',
       tableQr: 'קוד QR לשולחן', tableQrSub: 'הדפיסו והניחו על כל שולחן. אורחים חייבים לסרוק כדי להיכנס לחדר.',
+      tabVisitors: 'מבקרים',
+      visName: 'שם', visDate: 'תאריך ביקור', visEmail: 'אימייל', visAge: 'גיל', visGender: 'מגדר',
+      visEmpty: 'עדיין אין מבקרים.', visCantLoad: 'לא הצלחנו לטעון את רשימת המבקרים.', visCount: '{count} מבקרים',
     },
   },
 }

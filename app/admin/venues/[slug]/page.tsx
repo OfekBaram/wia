@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from 'react'
 import { AnalyticsTab } from '@/components/admin/AnalyticsTab'
+import { VisitorsTab } from '@/components/admin/VisitorsTab'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, ExternalLink, Trash2, MapPin, Sparkles, ImagePlus, Save, Eye, EyeOff } from 'lucide-react'
@@ -32,7 +33,8 @@ export default function AdminVenuePage({ params }: Props) {
   const [forbidden,    setForbidden]    = useState(false)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [uploadingImg, setUploadingImg] = useState(false)
-  const [tab,          setTab]          = useState<'overview' | 'analytics'>(tabParam === 'analytics' ? 'analytics' : 'overview')
+  const [tab,          setTab]          = useState<'overview' | 'analytics' | 'visitors'>(
+    tabParam === 'analytics' ? 'analytics' : tabParam === 'visitors' ? 'visitors' : 'overview')
   // Edit venue fields
   const [editName,     setEditName]     = useState('')
   const [editTagline,  setEditTagline]  = useState('')
@@ -242,7 +244,7 @@ export default function AdminVenuePage({ params }: Props) {
 
       {/* Tab bar */}
       <div className="flex gap-1 glass rounded-xl p-1 w-fit">
-        {(['overview', 'analytics'] as const).map(tabKey => (
+        {(['overview', 'visitors', 'analytics'] as const).map(tabKey => (
           <button
             key={tabKey}
             onClick={() => setTab(tabKey)}
@@ -252,12 +254,18 @@ export default function AdminVenuePage({ params }: Props) {
                 : 'text-wia-ink/50 hover:text-wia-ink'
             }`}
           >
-            {tabKey === 'overview' ? t('venueDetail.tabOverview') : t('venueDetail.tabAnalytics')}
+            {t(
+              tabKey === 'overview'  ? 'venueDetail.tabOverview'
+              : tabKey === 'visitors' ? 'venueDetail.tabVisitors'
+              :                         'venueDetail.tabAnalytics'
+            )}
           </button>
         ))}
       </div>
 
       {tab === 'analytics' && <AnalyticsTab venueSlug={slug} />}
+
+      {tab === 'visitors' && <VisitorsTab venueSlug={slug} />}
 
       {tab === 'overview' && <div className="grid lg:grid-cols-5 gap-6">
         <div className="lg:col-span-3 space-y-4">
