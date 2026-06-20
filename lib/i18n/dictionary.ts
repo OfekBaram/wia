@@ -256,6 +256,7 @@ export const dict: Record<Locale, Tree> = {
     adminNav: {
       admin: 'admin', venue: 'venue', dashboard: 'Dashboard', newVenue: 'New venue', analytics: 'Analytics',
       viewPublic: 'View public site →', roleAdmin: 'Admin', roleOwner: 'Venue owner', signOut: 'Sign out',
+      signOutConfirm: 'Sign out of your account?',
     },
     login: {
       signupTitle: 'Get WIA at your venue', signinTitle: 'Admin backoffice',
@@ -591,6 +592,7 @@ export const dict: Record<Locale, Tree> = {
     adminNav: {
       admin: 'אדמין', venue: 'בית עסק', dashboard: 'דשבורד', newVenue: 'בית עסק חדש', analytics: 'אנליטיקס',
       viewPublic: 'לאתר הראשי של WIA →', roleAdmin: 'אדמין', roleOwner: 'בעל/ת עסק', signOut: 'התנתקות',
+      signOutConfirm: 'להתנתק מהחשבון?',
     },
     login: {
       signupTitle: 'הביאו את WIA למקום שלכם', signinTitle: 'אזור הניהול',

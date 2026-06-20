@@ -65,7 +65,7 @@ export function AdminNav() {
                 <div className="text-[10px] uppercase tracking-wider text-wia-purple">{superAdmin ? t('adminNav.roleAdmin') : t('adminNav.roleOwner')}</div>
               </div>
               <button
-                onClick={signOut}
+                onClick={() => { if (confirm(t('adminNav.signOutConfirm'))) signOut() }}
                 className="p-2 rounded-lg text-wia-ink/60 hover:text-wia-ink hover:bg-white/5 transition-colors"
                 title={t('adminNav.signOut')}
               >
