@@ -10,6 +10,7 @@ import { ChatPanel } from './ChatPanel'
 import { ChatLauncher } from './ChatLauncher'
 import { ChatList } from './ChatList'
 import { useI18n } from '@/lib/i18n/I18nProvider'
+import { useConfirm } from '@/components/ui/ConfirmProvider'
 
 export const LIKE_LIMIT_PER_ROOM = 5
 
@@ -45,6 +46,7 @@ export function PresenceGrid({
   likesSent, likesReceived, onLikesChanged,
 }: PresenceGridProps) {
   const { t } = useI18n()
+  const confirm = useConfirm()
   const [sort,    setSort]    = useState<SortOption>('newest')
   const [filter,  setFilter]  = useState<FilterValue>('all')
   const [chatWith,    setChatWith]    = useState<PresenceProfile | null>(null)
@@ -160,8 +162,8 @@ export function PresenceGrid({
   async function handleModeration(targetUserId: string, action: 'hide' | 'report') {
     const person = presence.find(p => p.userId === targetUserId)
     const name = person?.name ?? t('room.them')
-    if (action === 'report' && !window.confirm(t('room.confirmReport', { name }))) return
-    if (action === 'hide' && !window.confirm(t('room.confirmHide', { name }))) return
+    if (action === 'report' && !(await confirm({ message: t('room.confirmReport', { name }), danger: true }))) return
+    if (action === 'hide'   && !(await confirm({ message: t('room.confirmHide', { name }) }))) return
     try {
       const res = await fetch('/api/moderation', {
         method:      'POST',

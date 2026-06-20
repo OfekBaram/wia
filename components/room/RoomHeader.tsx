@@ -7,6 +7,7 @@ import type { Location } from '@/lib/types'
 import { LiveBadge } from '@/components/ui/LiveBadge'
 import { VENUE_EMOJI } from '@/lib/mock-data'
 import { useI18n } from '@/lib/i18n/I18nProvider'
+import { useConfirm } from '@/components/ui/ConfirmProvider'
 
 interface RoomHeaderProps {
   location: Location
@@ -16,10 +17,11 @@ interface RoomHeaderProps {
 
 export function RoomHeader({ location, isMember, onLeave }: RoomHeaderProps) {
   const { t } = useI18n()
+  const confirm = useConfirm()
   const emoji = VENUE_EMOJI[location.category]
 
   async function leave() {
-    if (!confirm(t('roomHeader.leaveConfirm', { venue: location.name }))) return
+    if (!(await confirm({ message: t('roomHeader.leaveConfirm', { venue: location.name }) }))) return
     await fetch('/api/leave', {
       method: 'POST',
       credentials: 'include',

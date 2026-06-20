@@ -15,12 +15,14 @@ import { LiveBadge } from '@/components/ui/LiveBadge'
 import { QRCodePoster } from '@/components/admin/QRCodePoster'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { useAdminRole } from '@/lib/hooks/useAdminRole'
+import { useConfirm } from '@/components/ui/ConfirmProvider'
 
 interface Props { params: Promise<{ slug: string }> }
 
 export default function AdminVenuePage({ params }: Props) {
   const { t } = useI18n()
   const { isSuperAdmin } = useAdminRole()
+  const confirm = useConfirm()
   const { slug } = use(params)
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -113,7 +115,7 @@ export default function AdminVenuePage({ params }: Props) {
 
   async function handleDelete() {
     if (!venue) return
-    if (!confirm(t('dash.deleteConfirm', { name: venue.name }))) return
+    if (!(await confirm({ message: t('dash.deleteConfirm', { name: venue.name }), danger: true }))) return
     await fetch(`/api/admin/venues/${encodeURIComponent(venue.slug)}`, {
       method: 'DELETE',
       credentials: 'include',

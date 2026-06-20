@@ -6,10 +6,12 @@ import { LayoutDashboard, Plus, LogOut, BarChart2 } from 'lucide-react'
 import { useAdminRole } from '@/lib/hooks/useAdminRole'
 import { signOut } from '@/lib/auth'
 import { useI18n } from '@/lib/i18n/I18nProvider'
+import { useConfirm } from '@/components/ui/ConfirmProvider'
 
 export function AdminNav() {
   const pathname = usePathname()
   const { t } = useI18n()
+  const confirm = useConfirm()
   const { me } = useAdminRole()
   const superAdmin = me?.role === 'super_admin'
 
@@ -65,7 +67,7 @@ export function AdminNav() {
                 <div className="text-[10px] uppercase tracking-wider text-wia-purple">{superAdmin ? t('adminNav.roleAdmin') : t('adminNav.roleOwner')}</div>
               </div>
               <button
-                onClick={() => { if (confirm(t('adminNav.signOutConfirm'))) signOut() }}
+                onClick={async () => { if (await confirm({ message: t('adminNav.signOutConfirm') })) signOut() }}
                 className="p-2 rounded-lg text-wia-ink/60 hover:text-wia-ink hover:bg-white/5 transition-colors"
                 title={t('adminNav.signOut')}
               >

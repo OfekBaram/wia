@@ -15,6 +15,7 @@ export const dict: Record<Locale, Tree> = {
   en: {
     common: {
       language: 'Language',
+      confirm: 'Confirm', cancel: 'Cancel',
     },
     nav: {
       tagline:     'who is around',
@@ -351,6 +352,7 @@ export const dict: Record<Locale, Tree> = {
   he: {
     common: {
       language: 'שפה',
+      confirm: 'אישור', cancel: 'ביטול',
     },
     nav: {
       tagline:     'מי נמצא סביבך',

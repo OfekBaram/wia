@@ -10,6 +10,7 @@ import { LiveBadge } from '@/components/ui/LiveBadge'
 import { GlassCard } from '@/components/ui/GlassCard'
 import { useAdminRole } from '@/lib/hooks/useAdminRole'
 import { useI18n } from '@/lib/i18n/I18nProvider'
+import { useConfirm } from '@/components/ui/ConfirmProvider'
 
 interface VenueRow {
   id:           string
@@ -41,12 +42,13 @@ function StatTile({
 
 function Row({ venue, onDelete }: { venue: VenueRow; onDelete?: (slug: string) => void }) {
   const { t } = useI18n()
+  const confirm = useConfirm()
   const emoji = VENUE_EMOJI[venue.category as keyof typeof VENUE_EMOJI] ?? '📍'
   const [deleting, setDeleting] = useState(false)
 
   async function handleDelete(e: React.MouseEvent) {
     e.preventDefault()
-    if (!confirm(t('dash.deleteConfirm', { name: venue.name }))) return
+    if (!(await confirm({ message: t('dash.deleteConfirm', { name: venue.name }), danger: true }))) return
     setDeleting(true)
     await fetch(`/api/admin/venues/${encodeURIComponent(venue.slug)}`, {
       method: 'DELETE', credentials: 'include',
