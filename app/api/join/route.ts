@@ -187,7 +187,8 @@ export async function POST(req: Request) {
       gender:      body.gender,
       status_text: body.statusText?.trim() || '',
       selfie_url:  selfieUrl,
-      expires_at:  expiresAt,
+      expires_at:   expiresAt,
+      last_seen_at: new Date().toISOString(),
       left_at:     null,
       is_visible:  true,
     }, { onConflict: 'user_id,venue_id' })
