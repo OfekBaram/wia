@@ -1,25 +1,35 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Users, Clock, Heart, MessageCircle, QrCode, TrendingUp, BarChart2 } from 'lucide-react'
+import {
+  ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis,
+  Tooltip, CartesianGrid, PieChart, Pie, Cell,
+} from 'recharts'
+import { Users, Clock, Heart, MessageCircle, QrCode, TrendingUp, BarChart2, Repeat } from 'lucide-react'
 import { GlassCard } from '@/components/ui/GlassCard'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 
+type Range = 'today' | '7d' | '30d' | '90d'
+
 interface AnalyticsData {
-  totalVisitors:  number
-  visitorsToday:  number
-  visitorsWeek:   number
-  avgSessionMin:  number | null
-  avgAge:         number | null
-  genderCounts:   Record<string, number>
-  scanCount:      number
-  peakCount:      number
-  totalLikes:     number
-  totalMessages:  number
-  dailySeries:    [string, number][]
+  range:       Range
+  granularity: 'hour' | 'day' | 'week'
+  kpis: {
+    visitors: number; avgSessionMin: number | null; avgAge: number | null
+    totalLikes: number; totalMessages: number; returningRate: number
+    peakCount: number; scanCount: number
+  }
+  series:       { label: string; count: number }[]
+  hourly:       { hour: number; label: string; count: number }[]
+  ageBuckets:   { label: string; count: number }[]
+  genderCounts: Record<string, number>
 }
 
 interface Props { venueSlug: string }
+
+const PURPLE = '#8B5CF6', PINK = '#EC4899', CYAN = '#06B6D4', INK = '#1A1430', AXIS = '#9A93AD', GRID = '#EDEAF4'
+const GENDER_COLOR: Record<string, string> = { woman: PINK, man: CYAN, 'non-binary': PURPLE, unspecified: '#BCB2AC' }
+const GENDER_KEY: Record<string, string> = { woman: 'tab.gWomen', man: 'tab.gMen', 'non-binary': 'tab.gNonBinary', unspecified: 'tab.gUnspecified' }
 
 function Stat({ icon: Icon, label, value, sub, color = 'text-wia-purple' }: {
   icon: React.ElementType; label: string; value: string | number; sub?: string; color?: string
@@ -29,7 +39,7 @@ function Stat({ icon: Icon, label, value, sub, color = 'text-wia-purple' }: {
       <div className={`w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center shrink-0 ${color}`}>
         <Icon size={16} />
       </div>
-      <div>
+      <div className="min-w-0">
         <div className="font-display text-2xl font-bold text-wia-ink leading-tight">{value}</div>
         <div className="text-xs font-medium text-wia-ink/70">{label}</div>
         {sub && <div className="text-[11px] text-wia-ink/45 mt-0.5">{sub}</div>}
@@ -38,108 +48,177 @@ function Stat({ icon: Icon, label, value, sub, color = 'text-wia-purple' }: {
   )
 }
 
-const GENDER_LABEL_KEY: Record<string, string> = {
-  woman: 'tab.gWomen', man: 'tab.gMen', 'non-binary': 'tab.gNonBinary', unspecified: 'tab.gUnspecified',
+function ChartCard({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <GlassCard className="p-5">
+      <div className="flex items-baseline justify-between mb-3">
+        <h3 className="font-display font-semibold text-wia-ink">{title}</h3>
+        {hint && <span className="text-[11px] text-wia-ink/45">{hint}</span>}
+      </div>
+      {children}
+    </GlassCard>
+  )
 }
-const GENDER_COLOR: Record<string, string> = {
-  woman: 'bg-wia-pink', man: 'bg-wia-cyan', 'non-binary': 'bg-wia-purple', unspecified: 'bg-wia-ink/20',
+
+const tooltipStyle = {
+  background: '#FFFFFF', border: '1px solid #EDEAF4', borderRadius: 12,
+  fontSize: 12, color: INK, boxShadow: '0 8px 24px rgba(26,20,48,0.12)',
 }
 
 export function AnalyticsTab({ venueSlug }: Props) {
   const { t } = useI18n()
+  const [range,   setRange]   = useState<Range>('30d')
   const [data,    setData]    = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch(`/api/admin/venues/${encodeURIComponent(venueSlug)}/analytics`, {
+    setLoading(true)
+    fetch(`/api/admin/venues/${encodeURIComponent(venueSlug)}/analytics?range=${range}`, {
       credentials: 'include', cache: 'no-store',
     })
-      .then(r => r.json())
+      .then(r => (r.ok ? r.json() : null))
       .then(setData)
       .finally(() => setLoading(false))
-  }, [venueSlug])
+  }, [venueSlug, range])
 
-  if (loading) {
-    return (
-      <div className="py-16 flex items-center justify-center">
-        <div className="w-7 h-7 rounded-full border-2 border-wia-purple/30 border-t-wia-purple animate-spin" />
-      </div>
-    )
-  }
-  if (!data) return <div className="py-12 text-center text-wia-ink/50 text-sm">{t("tab.cantLoad")}</div>
-
-  const totalGender = Object.values(data.genderCounts).reduce((a, b) => a + b, 0)
-
-  // Mini bar chart for daily visitors
-  const maxDay = Math.max(...data.dailySeries.map(([, n]) => n), 1)
+  const RANGES: { key: Range; label: string }[] = [
+    { key: 'today', label: t('tab.rToday') },
+    { key: '7d',    label: t('tab.r7d') },
+    { key: '30d',   label: t('tab.r30d') },
+    { key: '90d',   label: t('tab.r90d') },
+  ]
+  const granLabel = data ? t(data.granularity === 'hour' ? 'tab.perHour' : data.granularity === 'week' ? 'tab.perWeek' : 'tab.perDay') : ''
 
   return (
-    <div className="space-y-6">
-      {/* Key stats grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <Stat icon={Users}       label={t("tab.totalVisitors")}   value={data.totalVisitors}  color="text-wia-purple" />
-        <Stat icon={Users}       label={t("tab.today")}            value={data.visitorsToday}  color="text-wia-green"  />
-        <Stat icon={Users}       label={t("tab.thisWeek")}        value={data.visitorsWeek}   color="text-wia-cyan"   />
-        <Stat icon={QrCode}      label={t("tab.totalScans")}      value={data.scanCount}      color="text-wia-pink"   />
-        <Stat icon={TrendingUp}  label={t("tab.peakCount")}       value={data.peakCount}      color="text-wia-purple" />
-        <Stat icon={Clock}       label={t("tab.avgSession")}      value={data.avgSessionMin !== null ? `${data.avgSessionMin}m` : '—'} color="text-wia-cyan" sub={data.avgSessionMin !== null ? undefined : t("tab.noSessions")} />
-        <Stat icon={Heart}       label={t("tab.totalLikes")}      value={data.totalLikes}     color="text-wia-pink"   />
-        <Stat icon={MessageCircle} label={t("tab.messagesSent")}  value={data.totalMessages}  color="text-wia-purple" />
-        <Stat icon={BarChart2}   label={t("tab.avgAge")}          value={data.avgAge ?? '—'}  color="text-wia-cyan"   />
+    <div className="space-y-5">
+      {/* Timeframe control */}
+      <div className="flex gap-1 glass rounded-xl p-1 w-fit">
+        {RANGES.map(r => (
+          <button
+            key={r.key}
+            onClick={() => setRange(r.key)}
+            className={`px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all ${
+              range === r.key ? 'bg-white shadow text-wia-ink' : 'text-wia-ink/50 hover:text-wia-ink'
+            }`}
+          >
+            {r.label}
+          </button>
+        ))}
       </div>
 
-      {/* Gender breakdown */}
-      {totalGender > 0 && (
-        <GlassCard className="p-5">
-          <h3 className="font-display font-semibold text-wia-ink mb-4">{t("tab.genderBreakdown")}</h3>
-          <div className="space-y-2.5">
-            {Object.entries(data.genderCounts).sort(([,a],[,b]) => b - a).map(([gender, count]) => (
-              <div key={gender} className="flex items-center gap-3">
-                <div className="w-24 text-xs text-wia-ink/60 shrink-0">{GENDER_LABEL_KEY[gender] ? t(GENDER_LABEL_KEY[gender]) : gender}</div>
-                <div className="flex-1 h-2 rounded-full bg-wia-ink/10 overflow-hidden">
-                  <div
-                    className={`h-full rounded-full ${GENDER_COLOR[gender] ?? 'bg-wia-purple'}`}
-                    style={{ width: `${Math.round((count / totalGender) * 100)}%` }}
-                  />
-                </div>
-                <div className="w-12 text-xs text-wia-ink/60 text-end shrink-0">
-                  {count} ({Math.round((count / totalGender) * 100)}%)
-                </div>
-              </div>
-            ))}
-          </div>
-        </GlassCard>
-      )}
-
-      {/* Daily visitors chart */}
-      {data.dailySeries.length > 0 && (
-        <GlassCard className="p-5">
-          <h3 className="font-display font-semibold text-wia-ink mb-4">{t("tab.last30")}</h3>
-          <div className="flex items-end gap-1 h-24">
-            {data.dailySeries.map(([day, count]) => (
-              <div key={day} className="flex-1 flex flex-col items-center gap-1 group relative">
-                <div
-                  className="w-full rounded-t bg-gradient-to-t from-wia-purple to-wia-pink opacity-70 group-hover:opacity-100 transition-opacity"
-                  style={{ height: `${Math.round((count / maxDay) * 100)}%`, minHeight: count > 0 ? 4 : 0 }}
-                />
-                <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] bg-wia-ink text-white px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                  {day.slice(5)}: {count}
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between text-[10px] text-wia-ink/40 mt-1">
-            <span>{data.dailySeries[0]?.[0]?.slice(5)}</span>
-            <span>{data.dailySeries[data.dailySeries.length - 1]?.[0]?.slice(5)}</span>
-          </div>
-        </GlassCard>
-      )}
-
-      {data.totalVisitors === 0 && (
-        <div className="py-12 text-center text-wia-ink/50 text-sm">
-          {t('tab.noData')}
+      {loading && (
+        <div className="py-16 flex items-center justify-center">
+          <div className="w-7 h-7 rounded-full border-2 border-wia-purple/30 border-t-wia-purple animate-spin" />
         </div>
       )}
+
+      {!loading && !data && (
+        <div className="py-12 text-center text-wia-ink/50 text-sm">{t('tab.cantLoad')}</div>
+      )}
+
+      {!loading && data && (() => {
+        const k = data.kpis
+        const genderRows = Object.entries(data.genderCounts)
+          .map(([g, value]) => ({ key: g, name: t(GENDER_KEY[g] ?? 'tab.gUnspecified'), value, color: GENDER_COLOR[g] ?? '#BCB2AC' }))
+          .filter(r => r.value > 0)
+        const noData = k.visitors === 0
+
+        return (
+          <div className="space-y-5">
+            {/* KPI grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <Stat icon={Users}          label={t('tab.visitors')}      value={k.visitors}                                              color="text-wia-purple" />
+              <Stat icon={Clock}          label={t('tab.avgSession')}    value={k.avgSessionMin !== null ? `${k.avgSessionMin}m` : '—'}  color="text-wia-cyan"   sub={k.avgSessionMin === null ? t('tab.noSessions') : undefined} />
+              <Stat icon={Heart}          label={t('tab.totalLikes')}    value={k.totalLikes}                                            color="text-wia-pink"   />
+              <Stat icon={MessageCircle}  label={t('tab.messagesSent')}  value={k.totalMessages}                                         color="text-wia-purple" />
+              <Stat icon={Repeat}         label={t('tab.returningRate')} value={`${k.returningRate}%`}  sub={t('tab.allTime')}            color="text-wia-green"  />
+              <Stat icon={TrendingUp}     label={t('tab.peakCount')}     value={k.peakCount}           sub={t('tab.allTime')}             color="text-wia-purple" />
+              <Stat icon={QrCode}         label={t('tab.totalScans')}    value={k.scanCount}           sub={t('tab.allTime')}             color="text-wia-pink"   />
+              <Stat icon={BarChart2}      label={t('tab.avgAge')}        value={k.avgAge ?? '—'}                                         color="text-wia-cyan"   />
+            </div>
+
+            {noData ? (
+              <div className="py-12 text-center text-wia-ink/50 text-sm">{t('tab.noData')}</div>
+            ) : (
+              <>
+                {/* Visitors over time */}
+                <ChartCard title={t('tab.visitorsOverTime')} hint={granLabel}>
+                  <div style={{ width: '100%', height: 240 }}>
+                    <ResponsiveContainer>
+                      <AreaChart data={data.series} margin={{ top: 8, right: 12, left: -18, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="vGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={PURPLE} stopOpacity={0.5} />
+                            <stop offset="100%" stopColor={PURPLE} stopOpacity={0.03} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid stroke={GRID} vertical={false} />
+                        <XAxis dataKey="label" stroke={AXIS} tick={{ fontSize: 11, fill: AXIS }} tickLine={false} axisLine={{ stroke: GRID }} minTickGap={24} />
+                        <YAxis allowDecimals={false} stroke={AXIS} tick={{ fontSize: 11, fill: AXIS }} tickLine={false} axisLine={false} width={36} />
+                        <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: PURPLE, strokeOpacity: 0.2 }} />
+                        <Area type="monotone" dataKey="count" name={t('tab.visitors')} stroke={PURPLE} strokeWidth={2.5} fill="url(#vGrad)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </ChartCard>
+
+                {/* Busiest hours */}
+                <ChartCard title={t('tab.busiestHours')} hint={t('tab.byHourHint')}>
+                  <div style={{ width: '100%', height: 200 }}>
+                    <ResponsiveContainer>
+                      <BarChart data={data.hourly} margin={{ top: 8, right: 12, left: -18, bottom: 0 }}>
+                        <CartesianGrid stroke={GRID} vertical={false} />
+                        <XAxis dataKey="label" stroke={AXIS} tick={{ fontSize: 10, fill: AXIS }} tickLine={false} axisLine={{ stroke: GRID }} interval={1} />
+                        <YAxis allowDecimals={false} stroke={AXIS} tick={{ fontSize: 11, fill: AXIS }} tickLine={false} axisLine={false} width={36} />
+                        <Tooltip contentStyle={tooltipStyle} cursor={{ fill: PURPLE, fillOpacity: 0.06 }} />
+                        <Bar dataKey="count" name={t('tab.visitors')} fill={CYAN} radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </ChartCard>
+
+                {/* Age + Gender */}
+                <div className="grid md:grid-cols-2 gap-5">
+                  <ChartCard title={t('tab.ageDist')}>
+                    <div style={{ width: '100%', height: 200 }}>
+                      <ResponsiveContainer>
+                        <BarChart data={data.ageBuckets} margin={{ top: 8, right: 12, left: -18, bottom: 0 }}>
+                          <CartesianGrid stroke={GRID} vertical={false} />
+                          <XAxis dataKey="label" stroke={AXIS} tick={{ fontSize: 12, fill: AXIS }} tickLine={false} axisLine={{ stroke: GRID }} />
+                          <YAxis allowDecimals={false} stroke={AXIS} tick={{ fontSize: 11, fill: AXIS }} tickLine={false} axisLine={false} width={36} />
+                          <Tooltip contentStyle={tooltipStyle} cursor={{ fill: PURPLE, fillOpacity: 0.06 }} />
+                          <Bar dataKey="count" name={t('tab.visitors')} fill={PURPLE} radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </ChartCard>
+
+                  <ChartCard title={t('tab.genderBreakdown')}>
+                    <div style={{ width: '100%', height: 200 }} className="flex items-center">
+                      <ResponsiveContainer>
+                        <PieChart>
+                          <Pie data={genderRows} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={2}>
+                            {genderRows.map(r => <Cell key={r.key} fill={r.color} />)}
+                          </Pie>
+                          <Tooltip contentStyle={tooltipStyle} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 justify-center">
+                      {genderRows.map(r => (
+                        <span key={r.key} className="inline-flex items-center gap-1.5 text-xs text-wia-ink/60">
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ background: r.color }} />
+                          {r.name} · {r.value}
+                        </span>
+                      ))}
+                    </div>
+                  </ChartCard>
+                </div>
+              </>
+            )}
+          </div>
+        )
+      })()}
     </div>
   )
 }

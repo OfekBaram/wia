@@ -315,6 +315,11 @@ export const dict: Record<Locale, Tree> = {
     },
     tab: {
       cantLoad: 'Could not load analytics.',
+      rToday: 'Today', r7d: '7 days', r30d: '30 days', r90d: '90 days',
+      perHour: 'by hour', perDay: 'by day', perWeek: 'by week',
+      visitors: 'Visitors', visitorsOverTime: 'Visitors over time',
+      busiestHours: 'Busiest hours', byHourHint: 'arrivals by hour of day',
+      ageDist: 'Age distribution', returningRate: 'Returning rate', allTime: 'all time',
       totalVisitors: 'Total visitors', today: 'Today', thisWeek: 'This week', totalScans: 'Total scans',
       peakCount: 'Peak count', avgSession: 'Avg session', noSessions: 'No completed sessions yet',
       totalLikes: 'Total likes', messagesSent: 'Messages sent', avgAge: 'Avg age',
@@ -652,6 +657,11 @@ export const dict: Record<Locale, Tree> = {
     },
     tab: {
       cantLoad: 'לא הצלחנו לטעון את האנליטיקס.',
+      rToday: 'היום', r7d: '7 ימים', r30d: '30 יום', r90d: '90 יום',
+      perHour: 'לפי שעה', perDay: 'לפי יום', perWeek: 'לפי שבוע',
+      visitors: 'מבקרים', visitorsOverTime: 'מבקרים לאורך זמן',
+      busiestHours: 'השעות העמוסות', byHourHint: 'הגעות לפי שעה ביום',
+      ageDist: 'פילוח גילאים', returningRate: 'שיעור חוזרים', allTime: 'כל הזמן',
       totalVisitors: 'סה״כ מבקרים', today: 'היום', thisWeek: 'השבוע', totalScans: 'סה״כ סריקות',
       peakCount: 'שיא נוכחות', avgSession: 'משך ביקור ממוצע', noSessions: 'עדיין אין ביקורים שהסתיימו',
       totalLikes: 'סה״כ לייקים', messagesSent: 'הודעות שנשלחו', avgAge: 'גיל ממוצע',
