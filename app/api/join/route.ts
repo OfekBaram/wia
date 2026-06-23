@@ -177,6 +177,29 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: `master_profile failed: ${mpErr.message}` }, { status: 500 })
     }
 
+    // ── Fresh session on return ─────────────────────────────────────────
+    // If the guest's last activity in this room was more than the 4h presence
+    // TTL ago, treat this as a brand-new session: clear their likes for this
+    // venue so they come back with a full 5 and no carried-over liked users.
+    // (Read the OLD presence before the upsert below overwrites last_seen_at.)
+    stage = 'session_reset'
+    const FOUR_HOURS = 4 * 60 * 60 * 1000
+    const { data: prior } = await admin
+      .from('presence')
+      .select('last_seen_at, left_at')
+      .eq('user_id', userId)
+      .eq('venue_id', venue.id)
+      .maybeSingle()
+    if (prior) {
+      const lastActive = Math.max(
+        prior.last_seen_at ? new Date(prior.last_seen_at).getTime() : 0,
+        prior.left_at      ? new Date(prior.left_at).getTime()      : 0,
+      )
+      if (lastActive && Date.now() - lastActive > FOUR_HOURS) {
+        await admin.from('likes').delete().eq('venue_id', venue.id).eq('from_user_id', userId)
+      }
+    }
+
     stage = 'presence'
     const expiresAt = new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString()
     const { error: presErr } = await admin.from('presence').upsert({
